@@ -79,6 +79,14 @@ sourceSets {
     test.runtimeClasspath += configurations.provided
 }
 
+jar {
+    doFirst {
+        manifest {
+            attributes "Class-Path": configurations.runtime.files.collect { it.getName() }.join(" ")
+        }
+    }
+}
+
 dependencies {
 
     /*

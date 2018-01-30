@@ -13,9 +13,6 @@ import org.apache.commons.cli.ParseException;
 public class CouplingCli {
     public static String HELP    = "help";
     public static String FILE    = "file";
-    public static String PEOPLE  = "people";
-    public static String WORKERS = "workers";
-    public static String SAMPLES = "samples";
 
     private static Options           options = new Options();
     private static CommandLineParser clp     = new DefaultParser();
