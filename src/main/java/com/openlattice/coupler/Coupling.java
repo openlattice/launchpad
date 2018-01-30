@@ -55,7 +55,7 @@ public class Coupling {
                     .option( "batchsize", 20000 )
                     .option( "driver", integration.getWriteDriver() )
                     .mode( SaveMode.Overwrite)
-                    .jdbc( integration.getWriteUrl(), "dispatch", integration.getProperties() );
+                    .jdbc( integration.getWriteUrl(), integration.getWriteTable() , integration.getProperties() );
         }
     }
 

@@ -24,6 +24,7 @@ public class Integration {
     private static final String WRITE_DRIVER = "writeDriver";
     private static final String HIKARI       = "hikari";
     private static final String FETCH_SIZE   = "fetchSize";
+    private static final String WRITE_TABLE  = "writeTable";
     private static       Logger logger       = LoggerFactory.getLogger( Integration.class );
     private final String     name;
     private final String     sql;
@@ -35,6 +36,7 @@ public class Integration {
     private final String     driver;
     private final String     writeDriver;
     private final int        fetchSize;
+    private final String     writeTable;
 
     @JsonCreator
     public Integration(
@@ -45,6 +47,7 @@ public class Integration {
             @JsonProperty( PASSWORD ) String password,
             @JsonProperty( WRITE_URL ) String writeUrl,
             @JsonProperty( WRITE_DRIVER ) String writeDriver,
+            @JsonProperty( WRITE_TABLE ) String writeTable,
             @JsonProperty( FETCH_SIZE ) int fetchSize,
             @JsonProperty( SQL ) String sql,
             @JsonProperty( HIKARI ) Properties hikari ) {
@@ -57,6 +60,7 @@ public class Integration {
         this.fetchSize = fetchSize;
         this.writeUrl = writeUrl;
         this.writeDriver = writeDriver;
+        this.writeTable = writeTable;
         this.hikari = hikari;
     }
 
@@ -115,5 +119,10 @@ public class Integration {
     @JsonProperty( HIKARI )
     public Properties getProperties() {
         return hikari;
+    }
+
+    @JsonProperty( WRITE_TABLE )
+    public String getWriteTable() {
+        return writeTable;
     }
 }
