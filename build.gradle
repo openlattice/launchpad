@@ -1,0 +1,111 @@
+plugins {
+    id "application"
+    id "java"
+    id "eclipse"
+    id "idea"
+    id "jacoco"
+}
+
+description = "Coupler"
+group = "com.openlattice"
+
+distTar {
+    archiveName "coupler.tgz"
+}
+
+ext.projectName = "coupler"
+ext.scmUrl = 'scm:git:https://github.com/openlattice/coupler.git'
+ext.connectionUrl = 'scm:git:https://github.com/openlattice/coupler.git'
+ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/coupler.git'
+
+apply from: "https://raw.githubusercontent.com/openlattice/gradles/master/openlattice.gradle"
+
+def SOCRATES_XMS = "$System.env.COUPLER_XMS"
+def SOCRATES_XMX = "$System.env.COUPLER_XMX"
+def S_ARGS = "$System.env.COUPLER_ARGS"
+def PARALLEL = "$System.env.PARALLELISM"
+def GC = "$System.env.GC"
+
+if (SOCRATES_XMS == 'null' || SOCRATES_XMS == null || SOCRATES_XMS == "") {
+    SOCRATES_XMS = '-Xms1g'
+}
+
+if (SOCRATES_XMX == 'null' || SOCRATES_XMX == null || SOCRATES_XMX == "") {
+    SOCRATES_XMX = '-Xms4g'
+}
+
+if (S_ARGS == 'null' || S_ARGS == null || S_ARGS == "") {
+    S_ARGS = 'cassandra spark local'
+}
+
+if( PARALLEL == 'null' || PARALLEL == null || PARALLEL == "" ) {
+    PARALLEL = "-Djava.util.concurrent.ForkJoinPool.common.parallelism=" + Runtime.runtime.availableProcessors()
+}
+
+if (GC == 'null' || GC == null || GC == "") {
+    GC = "-XX:+UseG1GC"
+}
+
+
+mainClassName = "com.openlattice.coupler.Coupling"
+applicationDefaultJvmArgs = [SOCRATES_XMS, SOCRATES_XMX, "-server", PARALLEL, GC]
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+println "Using java args for running ${projectName}: " + Arrays.toString( applicationDefaultJvmArgs )
+
+run {
+    if (S_ARGS != null) {
+        args S_ARGS.split()
+    } else if (System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
+println "Enabled profiles: " + Arrays.toString(run.args)
+
+configurations {
+    provided
+}
+
+configurations.all {
+    exclude module: 'slf4j-log4j12'
+    exclude group: 'asm', module: 'asm'
+}
+
+sourceSets {
+    main.compileClasspath += configurations.provided
+    test.compileClasspath += configurations.provided
+    test.runtimeClasspath += configurations.provided
+}
+
+dependencies {
+    compile 'commons-cli:commons-cli:1.4'
+
+    compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
+    compile 'com.zaxxer:HikariCP:2.7.1'
+    compile 'org.postgresql:postgresql:42.1.4'
+        
+    compile "org.apache.spark:spark-core_2.11:${spark_version}"
+    compile "org.apache.spark:spark-sql_2.11:${spark_version}"
+    compile "org.apache.spark:spark-mllib_2.11:${spark_version}"
+    compile "org.apache.spark:spark-graphx_2.11:${spark_version}"
+    compile "org.apache.spark:spark-streaming_2.11:${spark_version}"
+    compile "org.ow2.asm:asm:5.0.4"
+
+    /*
+     * TESTING
+     */
+    testCompile "junit:junit:${junit_version}"
+    testCompile "org.mockito:mockito-all:${mockito_version}"
+}
+
+eclipse {
+    ext.downloadSources = true
+    ext.downloadJavadoc = true
+
+    ext.sourceCompatibility = JavaVersion.VERSION_1_8
+    ext.targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+eclipse.classpath.plusConfigurations += [configurations.provided] 
