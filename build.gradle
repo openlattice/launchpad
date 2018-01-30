@@ -91,6 +91,20 @@ dependencies {
     compile "org.apache.spark:spark-mllib_2.11:${spark_version}"
     compile "org.apache.spark:spark-graphx_2.11:${spark_version}"
     compile "org.apache.spark:spark-streaming_2.11:${spark_version}"
+
+    compile "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jackson_version}"
+    compile "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${jackson_version}"
+    compile "com.fasterxml.jackson.module:jackson-module-afterburner:${jackson_version}"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${jackson_version}"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson_version}"
+    compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson_version}"
+    compile 'org.yaml:snakeyaml:${snakeyaml_version}'
+
     compile "org.ow2.asm:asm:5.0.4"
 
     /*
