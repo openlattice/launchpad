@@ -133,6 +133,10 @@ dependencies {
     testCompile "org.mockito:mockito-all:${mockito_version}"
 }
 
+startScripts {
+    classpath = files(jar.archivePath)
+}
+
 eclipse {
     ext.downloadSources = true
     ext.downloadJavadoc = true
