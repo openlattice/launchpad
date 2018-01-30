@@ -38,7 +38,7 @@ if (S_ARGS == 'null' || S_ARGS == null || S_ARGS == "") {
     S_ARGS = 'cassandra spark local'
 }
 
-if( PARALLEL == 'null' || PARALLEL == null || PARALLEL == "" ) {
+if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
     PARALLEL = "-Djava.util.concurrent.ForkJoinPool.common.parallelism=" + Runtime.runtime.availableProcessors()
 }
 
@@ -52,7 +52,7 @@ applicationDefaultJvmArgs = [SOCRATES_XMS, SOCRATES_XMX, "-server", PARALLEL, GC
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
-println "Using java args for running ${projectName}: " + Arrays.toString( applicationDefaultJvmArgs )
+println "Using java args for running ${projectName}: " + Arrays.toString(applicationDefaultJvmArgs)
 
 run {
     if (S_ARGS != null) {
@@ -80,6 +80,17 @@ sourceSets {
 }
 
 dependencies {
+
+    /*
+     * SL4J + LOG4J2
+     */
+    compile group: "org.slf4j", name: "slf4j-api", version: "${slf4j_version}"
+
+    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: "${log4j_version}"
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: "${log4j_version}"
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: "${log4j_version}"
+    compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: "${log4j_version}"
+
     compile 'commons-cli:commons-cli:1.4'
 
     compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
