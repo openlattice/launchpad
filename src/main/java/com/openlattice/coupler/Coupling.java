@@ -40,6 +40,7 @@ public class Coupling {
         Integration[] integrations = mapper.readValue( integrationFile, Integration[].class );
 
         for( Integration integration : integrations ) {
+            Dataset<Row> csv = sparkSession.read().csv( "" );
             Dataset<Row> ds = sparkSession
                     .read()
                     .format( "jdbc" )
@@ -48,13 +49,13 @@ public class Coupling {
                     .option( "password", integration.getPassword() )
                     .option( "user", integration.getUser() )
                     .option( "driver", integration.getDriver() )
-                    .option( "fetchSize", 20000 )
+                    .option( "fetchSize", integration.getFetchSize() )
                     .load();
 
             ds.write()
                     .option( "batchsize", 20000 )
                     .option( "driver", integration.getWriteDriver() )
-                    .mode( SaveMode.Overwrite)
+                    .mode( SaveMode.Overwrite )
                     .jdbc( integration.getWriteUrl(), integration.getWriteTable() , integration.getProperties() );
         }
     }
