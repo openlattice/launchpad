@@ -1,10 +1,10 @@
 .gradle/
-.kryptnostic/
 bin/
 build/
 artifacts/
 src/main/webapp/auth/
 logging/
+out/
 
 # IDE generated files
 .classpath

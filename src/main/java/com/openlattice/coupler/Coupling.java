@@ -25,8 +25,7 @@ public class Coupling {
     private static final SparkSession sparkSession = SparkSession.builder()
             .master( "local[" + Runtime.getRuntime().availableProcessors() + "]" )
             .appName( "integration" )
-                .getOrCreate();
-
+            .getOrCreate();
 
     public static void main( String[] args ) throws ParseException, IOException {
         CommandLine cl = CouplingCli.parseCommandLine( args );
@@ -39,24 +38,37 @@ public class Coupling {
 
         Integration[] integrations = mapper.readValue( integrationFile, Integration[].class );
 
-        for( Integration integration : integrations ) {
+        for ( Integration integration : integrations ) {
             Dataset<Row> csv = sparkSession.read().csv( "" );
-            Dataset<Row> ds = sparkSession
-                    .read()
-                    .format( "jdbc" )
-                    .option( "url", integration.getUrl() )
-                    .option( "dbtable", integration.getSql() )
-                    .option( "password", integration.getPassword() )
-                    .option( "user", integration.getUser() )
-                    .option( "driver", integration.getDriver() )
-                    .option( "fetchSize", integration.getFetchSize() )
-                    .load();
+            Dataset<Row> ds = getSourceDataset( integration );
 
             ds.write()
                     .option( "batchsize", 20000 )
                     .option( "driver", integration.getWriteDriver() )
                     .mode( SaveMode.Overwrite )
-                    .jdbc( integration.getWriteUrl(), integration.getWriteTable() , integration.getProperties() );
+                    .jdbc( integration.getWriteUrl(), integration.getWriteTable(), integration.getProperties() );
+        }
+    }
+
+    protected static Dataset<Row> getSourceDataset( Integration integration ) {
+        switch ( integration.getDriver() ) {
+            case "com.openlattice.launchpad.Csv":
+                return sparkSession
+                        .read()
+                        .option( "header", true )
+                        .option( "inferSchema", true )
+                        .csv( integration.getUrl() );
+            default:
+                return sparkSession
+                        .read()
+                        .format( "jdbc" )
+                        .option( "url", integration.getUrl() )
+                        .option( "dbtable", integration.getSql() )
+                        .option( "password", integration.getPassword() )
+                        .option( "user", integration.getUser() )
+                        .option( "driver", integration.getDriver() )
+                        .option( "fetchSize", integration.getFetchSize() )
+                        .load();
         }
     }
 
