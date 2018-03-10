@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
@@ -36,8 +37,10 @@ public class Coupling {
         Preconditions.checkState( StringUtils.isNotBlank( integrationFilePath ) );
         File integrationFile = new File( integrationFilePath );
 
-        Integration[] integrations = mapper.readValue( integrationFile, Integration[].class );
+        IntegrationConfiguration integrationConfiguration = mapper.readValue( integrationFile, IntegrationConfiguration.class );
 
+        List<Integration> integrations = integrationConfiguration.getIntegrations();
+        
         for ( Integration integration : integrations ) {
             Dataset<Row> csv = sparkSession.read().csv( "" );
             Dataset<Row> ds = getSourceDataset( integration );
