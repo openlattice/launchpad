@@ -11,13 +11,13 @@ description = "Coupler"
 group = "com.openlattice"
 
 distTar {
-    archiveName "coupler.tgz"
+    archiveName "launchpad.tgz"
 }
 
-ext.projectName = "coupler"
-ext.scmUrl = 'scm:git:https://github.com/openlattice/coupler.git'
-ext.connectionUrl = 'scm:git:https://github.com/openlattice/coupler.git'
-ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/coupler.git'
+ext.projectName = "launchpad"
+ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
+ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
+ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 
 apply from: "https://raw.githubusercontent.com/openlattice/gradles/master/openlattice.gradle"
 apply plugin: 'kotlin'
@@ -49,7 +49,7 @@ if (GC == 'null' || GC == null || GC == "") {
 }
 
 
-mainClassName = "com.openlattice.coupler.Coupling"
+mainClassName = "com.openlattice.launchpad.Coupling"
 applicationDefaultJvmArgs = [SOCRATES_XMS, SOCRATES_XMX, "-server", PARALLEL, GC]
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
