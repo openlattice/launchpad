@@ -36,6 +36,9 @@ import org.slf4j.LoggerFactory;
 public class LaunchpadDestination {
     private static final String WRITE_URL    = "writeUrl";
     private static final String WRITE_DRIVER = "writeDriver";
+    private static final String USER       = "username";
+    private static final String PASSWORD   = "password";
+
     private static final String PROPERTIES   = "properties";
     private static final String WRITE_TABLE  = "writeTable";
     private static final String BATCH_SIZE ="batchSize";
@@ -51,6 +54,8 @@ public class LaunchpadDestination {
             @JsonProperty( WRITE_URL ) String writeUrl,
             @JsonProperty( WRITE_DRIVER ) String writeDriver,
             @JsonProperty( WRITE_TABLE ) String writeTable,
+            @JsonProperty( USER ) Optional<String> username,
+            @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( PROPERTIES ) Properties properties,
             @JsonProperty( BATCH_SIZE ) Optional<Integer> batchSize ) {
         this.writeUrl = writeUrl;
@@ -58,6 +63,8 @@ public class LaunchpadDestination {
         this.writeTable = writeTable;
         this.properties = properties;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
+        username.ifPresent( u -> properties.setProperty(USER, u));
+        password.ifPresent( u -> properties.setProperty(PASSWORD, u));
     }
 
     @JsonProperty( WRITE_DRIVER )
