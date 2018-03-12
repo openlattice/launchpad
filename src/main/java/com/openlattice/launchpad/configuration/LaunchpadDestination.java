@@ -63,8 +63,8 @@ public class LaunchpadDestination {
         this.writeTable = writeTable;
         this.properties = properties;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
-        username.ifPresent( u -> properties.setProperty(USER, u));
-        password.ifPresent( u -> properties.setProperty(PASSWORD, u));
+        username.ifPresent( u -> properties.setProperty(USER, u) );
+        password.ifPresent( p -> properties.setProperty(PASSWORD, p) );
     }
 
     @JsonProperty( WRITE_DRIVER )
