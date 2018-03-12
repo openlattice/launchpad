@@ -34,13 +34,13 @@ import org.slf4j.LoggerFactory;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchpadDestination {
-    private static final String WRITE_URL    = "writeUrl";
-    private static final String WRITE_DRIVER = "writeDriver";
+    private static final String WRITE_URL    = "url";
+    private static final String WRITE_DRIVER = "driver";
     private static final String USER       = "username";
     private static final String PASSWORD   = "password";
 
     private static final String PROPERTIES   = "properties";
-    private static final String WRITE_TABLE  = "writeTable";
+    private static final String WRITE_TABLE  = "table";
     private static final String BATCH_SIZE ="batchSize";
     private static final int DEFAULT_BATCH_SIZE = 20000;
     private static       Logger logger       = LoggerFactory.getLogger( LaunchpadDestination.class );
@@ -56,15 +56,15 @@ public class LaunchpadDestination {
             @JsonProperty( WRITE_TABLE ) String writeTable,
             @JsonProperty( USER ) Optional<String> username,
             @JsonProperty( PASSWORD ) Optional<String> password,
-            @JsonProperty( PROPERTIES ) Properties properties,
+            @JsonProperty( PROPERTIES ) Optional<Properties> properties,
             @JsonProperty( BATCH_SIZE ) Optional<Integer> batchSize ) {
         this.writeUrl = writeUrl;
         this.writeDriver = writeDriver;
         this.writeTable = writeTable;
-        this.properties = properties;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
-        username.ifPresent( u -> properties.setProperty(USER, u) );
-        password.ifPresent( p -> properties.setProperty(PASSWORD, p) );
+        this.properties = properties.orElse( new Properties(  ) );
+        username.ifPresent( u -> this.properties.setProperty("user", u) );
+        password.ifPresent( p -> this.properties.setProperty(PASSWORD, p) );
     }
 
     @JsonProperty( WRITE_DRIVER )
