@@ -23,7 +23,7 @@ import org.apache.spark.sql.SparkSession;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchPad {
-
+    public static final String CSV_DRIVER = "com.openlattice.launchpad.Csv";
     private static final ObjectMapper mapper       = createYamlMapper();
     private static final SparkSession sparkSession = SparkSession.builder()
             .master( "local[" + Runtime.getRuntime().availableProcessors() + "]" )
@@ -59,7 +59,7 @@ public class LaunchPad {
 
     protected static Dataset<Row> getSourceDataset( Integration integration ) {
         switch ( integration.getSource().getDriver() ) {
-            case "com.openlattice.launchpad.Csv":
+            case CSV_DRIVER:
                 return sparkSession
                         .read()
                         .option( "header", true )

@@ -22,7 +22,10 @@
 package com.openlattice.launchpad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.openlattice.launchpad.LaunchPad;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.core.tools.picocli.CommandLine.MissingParameterException;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
@@ -32,7 +35,7 @@ public class LaunchpadDatasource {
     private static final String URL        = "url";
     private static final String DRIVER     = "driver";
     private static final String SQL        = "sql";
-    private static final String USER       = "user";
+    private static final String USER       = "username";
     private static final String PASSWORD   = "password";
     private static final String FETCH_SIZE = "fetchSize";
 
@@ -49,16 +52,28 @@ public class LaunchpadDatasource {
             @JsonProperty( URL ) String url,
             @JsonProperty( DRIVER ) String driver,
             @JsonProperty( SQL ) String sql,
-            @JsonProperty( USER ) String user,
-            @JsonProperty( PASSWORD ) String password,
+            @JsonProperty( USER ) Optional<String> user,
+            @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize ) {
         this.name = name.orElse( "Unnamed Datasource" );
         this.url = url;
         this.sql = sql;
         this.driver = driver;
-        this.user = user;
-        this.password = password;
+        if ( !StringUtils.equals( LaunchPad.CSV_DRIVER, driver ) ) {
+            this.user = user.orElseThrow( () -> new MissingParameterException(
+                    "A username must be specified for database connections." ) );
+        } else {
+            //User can be blank for CSV.
+            this.user = "";
+        }
+        //Depending on server configuration a password may not be required to establish a connection.
+        this.password = password.orElse( "" );
         this.fetchSize = fetchSize.orElse( 20000 );
+    }
+
+    @JsonProperty( NAME )
+    public String getName() {
+        return name;
     }
 
     @JsonProperty( FETCH_SIZE )
