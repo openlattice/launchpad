@@ -21,9 +21,11 @@
 
 package com.openlattice.launchpad.configuration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.openlattice.launchpad.LaunchPad;
 import java.util.Optional;
+import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.core.tools.picocli.CommandLine.MissingParameterException;
 
@@ -39,13 +41,14 @@ public class LaunchpadDatasource {
     private static final String PASSWORD   = "password";
     private static final String FETCH_SIZE = "fetchSize";
 
-    private final String name;
-    private final String url;
-    private final String driver;
-    private final String sql;
-    private final String password;
-    private final String user;
-    private final int    fetchSize;
+    private final String     name;
+    private final String     url;
+    private final String     driver;
+    private final String     sql;
+    private final String     password;
+    private final String     user;
+    private final int        fetchSize;
+    private final Properties properties;
 
     public LaunchpadDatasource(
             @JsonProperty( NAME ) Optional<String> name,
@@ -69,6 +72,11 @@ public class LaunchpadDatasource {
         //Depending on server configuration a password may not be required to establish a connection.
         this.password = password.orElse( "" );
         this.fetchSize = fetchSize.orElse( 20000 );
+
+        properties = new Properties();
+        properties.setProperty( "user", this.user );
+        properties.setProperty( "password", this.password );
+        properties.setProperty( "driver", this.driver );
     }
 
     @JsonProperty( NAME )
@@ -104,6 +112,11 @@ public class LaunchpadDatasource {
     @JsonProperty( PASSWORD )
     public String getPassword() {
         return password;
+    }
+
+    @JsonIgnore
+    public Properties getProperties() {
+        return properties;
     }
 
 }

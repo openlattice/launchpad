@@ -7,12 +7,8 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "1.2.30"
 }
 
-description = "Coupler"
+description = "Launchpad"
 group = "com.openlattice"
-
-distTar {
-    archiveName "launchpad.tgz"
-}
 
 ext.projectName = "launchpad"
 ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
@@ -22,22 +18,22 @@ ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.g
 apply from: "https://raw.githubusercontent.com/openlattice/gradles/master/openlattice.gradle"
 apply plugin: 'kotlin'
 
-def SOCRATES_XMS = "$System.env.COUPLER_XMS"
-def SOCRATES_XMX = "$System.env.COUPLER_XMX"
-def S_ARGS = "$System.env.COUPLER_ARGS"
+def LAUNCHPAD_XMS = "$System.env.COUPLER_XMS"
+def LAUNCHPAD_XMX = "$System.env.COUPLER_XMX"
+def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
 def PARALLEL = "$System.env.PARALLELISM"
 def GC = "$System.env.GC"
 
-if (SOCRATES_XMS == 'null' || SOCRATES_XMS == null || SOCRATES_XMS == "") {
-    SOCRATES_XMS = '-Xms1g'
+if (LAUNCHPAD_XMS == 'null' || LAUNCHPAD_XMS == null || LAUNCHPAD_XMS == "") {
+    LAUNCHPAD_XMS = '-Xms1g'
 }
 
-if (SOCRATES_XMX == 'null' || SOCRATES_XMX == null || SOCRATES_XMX == "") {
-    SOCRATES_XMX = '-Xms4g'
+if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
+    LAUNCHPAD_XMX = '-Xms4g'
 }
 
-if (S_ARGS == 'null' || S_ARGS == null || S_ARGS == "") {
-    S_ARGS = 'cassandra spark local'
+if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
+    LP_ARGS = 'cassandra spark local'
 }
 
 if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
@@ -50,15 +46,15 @@ if (GC == 'null' || GC == null || GC == "") {
 
 
 mainClassName = "com.openlattice.launchpad.Coupling"
-applicationDefaultJvmArgs = [SOCRATES_XMS, SOCRATES_XMX, "-server", PARALLEL, GC]
+applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
 println "Using java args for running ${projectName}: " + Arrays.toString(applicationDefaultJvmArgs)
 
 run {
-    if (S_ARGS != null) {
-        args S_ARGS.split()
+    if (LP_ARGS != null) {
+        args LP_ARGS.split()
     } else if (System.getProperty("exec.args") != null) {
         args System.getProperty("exec.args").split()
     }

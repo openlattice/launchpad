@@ -71,8 +71,8 @@ public class LaunchPad {
                         .format( "jdbc" )
                         .option( "url", integration.getSource().getUrl() )
                         .option( "dbtable", integration.getSource().getSql() )
-                        .option( "password", integration.getSource().getPassword() )
                         .option( "user", integration.getSource().getUser() )
+                        .option( "password", integration.getSource().getPassword() )
                         .option( "driver", integration.getSource().getDriver() )
                         .option( "fetchSize", integration.getSource().getFetchSize() )
                         .load();
