@@ -1,0 +1,159 @@
+plugins {
+    id "application"
+    id "java"
+    id "eclipse"
+    id "idea"
+    id "jacoco"
+    id "org.jetbrains.kotlin.jvm" version "1.2.30"
+}
+
+description = "Launchpad"
+group = "com.openlattice"
+
+ext.projectName = "launchpad"
+ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
+ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
+ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
+
+apply from: "https://raw.githubusercontent.com/openlattice/gradles/master/openlattice.gradle"
+apply plugin: 'kotlin'
+
+def LAUNCHPAD_XMS = "$System.env.COUPLER_XMS"
+def LAUNCHPAD_XMX = "$System.env.COUPLER_XMX"
+def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
+def PARALLEL = "$System.env.PARALLELISM"
+def GC = "$System.env.GC"
+
+if (LAUNCHPAD_XMS == 'null' || LAUNCHPAD_XMS == null || LAUNCHPAD_XMS == "") {
+    LAUNCHPAD_XMS = '-Xms1g'
+}
+
+if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
+    LAUNCHPAD_XMX = '-Xms4g'
+}
+
+if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
+    LP_ARGS = 'cassandra spark local'
+}
+
+if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
+    PARALLEL = "-Djava.util.concurrent.ForkJoinPool.common.parallelism=" + Runtime.runtime.availableProcessors()
+}
+
+if (GC == 'null' || GC == null || GC == "") {
+    GC = "-XX:+UseG1GC"
+}
+
+
+mainClassName = "com.openlattice.launchpad.Coupling"
+applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+println "Using java args for running ${projectName}: " + Arrays.toString(applicationDefaultJvmArgs)
+
+run {
+    if (LP_ARGS != null) {
+        args LP_ARGS.split()
+    } else if (System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
+println "Enabled profiles: " + Arrays.toString(run.args)
+
+configurations {
+    provided
+}
+
+configurations.all {
+    exclude module: 'slf4j-log4j12'
+    exclude group: 'asm', module: 'asm'
+}
+
+sourceSets {
+    main.compileClasspath += configurations.provided
+    test.compileClasspath += configurations.provided
+    test.runtimeClasspath += configurations.provided
+}
+
+jar {
+    doFirst {
+        manifest {
+            attributes "Class-Path": configurations.runtime.files.collect { it.getName() }.join(" ")
+        }
+    }
+}
+ext.jv = "2.6.5"
+dependencies {
+
+    /*
+     * SL4J + LOG4J2
+     */
+    compile group: "org.slf4j", name: "slf4j-api", version: "${slf4j_version}"
+
+    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: "${log4j_version}"
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: "${log4j_version}"
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: "${log4j_version}"
+    compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: "${log4j_version}"
+
+    compile 'commons-cli:commons-cli:1.4'
+
+    compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
+    compile 'org.postgresql:postgresql:42.1.4'
+    compile 'com.zaxxer:HikariCP:2.7.1'
+
+    compile "org.apache.spark:spark-core_2.11:${spark_version}"
+    compile "org.apache.spark:spark-sql_2.11:${spark_version}"
+    compile "org.apache.spark:spark-mllib_2.11:${spark_version}"
+    compile "org.apache.spark:spark-graphx_2.11:${spark_version}"
+    compile "org.apache.spark:spark-streaming_2.11:${spark_version}"
+
+    compile "com.fasterxml.jackson.core:jackson-core:${jv}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${jv}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jv}"
+    compile "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${jv}"
+    compile "com.fasterxml.jackson.module:jackson-module-afterburner:${jv}"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${jv}"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jv}"
+    compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jv}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jv}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jv}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jv}"
+    compile 'org.yaml:snakeyaml:${snakeyaml_version}'
+
+    compile "org.ow2.asm:asm:5.0.4"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    /*
+     * TESTING
+     */
+    testCompile "junit:junit:${junit_version}"
+    testCompile "org.mockito:mockito-all:${mockito_version}"
+
+}
+
+startScripts {
+    classpath = files(jar.archivePath)
+}
+
+eclipse {
+    ext.downloadSources = true
+    ext.downloadJavadoc = true
+
+    ext.sourceCompatibility = JavaVersion.VERSION_1_8
+    ext.targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+eclipse.classpath.plusConfigurations += [configurations.provided]
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
