@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.openlattice.launchpad.configuration.Integration;
 import com.openlattice.launchpad.configuration.IntegrationConfiguration;
@@ -23,7 +24,7 @@ import org.apache.spark.sql.SparkSession;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchPad {
-    public static final String CSV_DRIVER = "com.openlattice.launchpad.Csv";
+    public static final  String       CSV_DRIVER   = "com.openlattice.launchpad.Csv";
     private static final ObjectMapper mapper       = createYamlMapper();
     private static final SparkSession sparkSession = SparkSession.builder()
             .master( "local[" + Runtime.getRuntime().availableProcessors() + "]" )
@@ -41,19 +42,34 @@ public class LaunchPad {
 
         IntegrationConfiguration integrationConfiguration = mapper
                 .readValue( integrationFile, IntegrationConfiguration.class );
+    }
 
+    @VisibleForTesting
+    public static void runIntegrations( IntegrationConfiguration integrationConfiguration ) {
         List<Integration> integrations = integrationConfiguration.getIntegrations();
 
         for ( Integration integration : integrations ) {
             Dataset<Row> ds = getSourceDataset( integration );
-
-            ds.write()
-                    .option( "batchsize", integration.getDestination().getBatchSize() )
-                    .option( "driver", integration.getDestination().getWriteDriver() )
-                    .mode( SaveMode.Overwrite )
-                    .jdbc( integration.getDestination().getWriteUrl(),
-                            integration.getDestination().getWriteTable(),
-                            integration.getDestination().getProperties() );
+            //Only CSV and JDBC are tested.
+            switch ( integration.getDestination().getWriteDriver() ) {
+                case CSV_DRIVER:
+                    ds.write().option( "header", true ).csv( integration.getDestination().getWriteUrl() );
+                    break;
+                case "parquet":
+                    ds.write().parquet( integration.getDestination().getWriteUrl() );
+                    break;
+                case "orc":
+                    ds.write().orc( integration.getDestination().getWriteUrl() );
+                    break;
+                default:
+                    ds.write()
+                            .option( "batchsize", integration.getDestination().getBatchSize() )
+                            .option( "driver", integration.getDestination().getWriteDriver() )
+                            .mode( SaveMode.Overwrite )
+                            .jdbc( integration.getDestination().getWriteUrl(),
+                                    integration.getDestination().getWriteTable(),
+                                    integration.getDestination().getProperties() );
+            }
         }
     }
 

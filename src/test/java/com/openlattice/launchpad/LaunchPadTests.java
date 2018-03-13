@@ -21,8 +21,18 @@
 
 package com.openlattice.launchpad;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.openlattice.launchpad.configuration.IntegrationConfiguration;
+import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
+import java.io.IOException;
+import org.junit.Test;
+
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchPadTests {
+    @Test
+    public void runIntegration() throws IOException {
+        LaunchPad.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
+    }
 }
