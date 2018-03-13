@@ -24,6 +24,7 @@ package com.openlattice.launchpad.configuration;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.openlattice.launchpad.LaunchPad;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
@@ -119,4 +120,35 @@ public class LaunchpadDatasource {
         return properties;
     }
 
+    @Override public boolean equals( Object o ) {
+        if ( this == o ) { return true; }
+        if ( !( o instanceof LaunchpadDatasource ) ) { return false; }
+        LaunchpadDatasource that = (LaunchpadDatasource) o;
+        return fetchSize == that.fetchSize &&
+                Objects.equals( name, that.name ) &&
+                Objects.equals( url, that.url ) &&
+                Objects.equals( driver, that.driver ) &&
+                Objects.equals( sql, that.sql ) &&
+                Objects.equals( password, that.password ) &&
+                Objects.equals( user, that.user ) &&
+                Objects.equals( properties, that.properties );
+    }
+
+    @Override public int hashCode() {
+
+        return Objects.hash( name, url, driver, sql, password, user, fetchSize, properties );
+    }
+
+    @Override public String toString() {
+        return "LaunchpadDatasource{" +
+                "name='" + name + '\'' +
+                ", url='" + url + '\'' +
+                ", driver='" + driver + '\'' +
+                ", sql='" + sql + '\'' +
+                ", password='" + password + '\'' +
+                ", user='" + user + '\'' +
+                ", fetchSize=" + fetchSize +
+                ", properties=" + properties +
+                '}';
+    }
 }

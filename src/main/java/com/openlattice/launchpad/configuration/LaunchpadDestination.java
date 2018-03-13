@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -97,5 +98,31 @@ public class LaunchpadDestination {
         HikariConfig hc = new HikariConfig( properties );
         logger.info( "JDBC URL = {}", hc.getJdbcUrl() );
         return new HikariDataSource( hc );
+    }
+
+    @Override public String toString() {
+        return "LaunchpadDestination{" +
+                "writeUrl='" + writeUrl + '\'' +
+                ", writeDriver='" + writeDriver + '\'' +
+                ", writeTable='" + writeTable + '\'' +
+                ", properties=" + properties +
+                ", batchSize=" + batchSize +
+                '}';
+    }
+
+    @Override public boolean equals( Object o ) {
+        if ( this == o ) { return true; }
+        if ( !( o instanceof LaunchpadDestination ) ) { return false; }
+        LaunchpadDestination that = (LaunchpadDestination) o;
+        return batchSize == that.batchSize &&
+                Objects.equals( writeUrl, that.writeUrl ) &&
+                Objects.equals( writeDriver, that.writeDriver ) &&
+                Objects.equals( writeTable, that.writeTable ) &&
+                Objects.equals( properties, that.properties );
+    }
+
+    @Override public int hashCode() {
+
+        return Objects.hash( writeUrl, writeDriver, writeTable, properties, batchSize );
     }
 }

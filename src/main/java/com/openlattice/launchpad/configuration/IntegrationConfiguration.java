@@ -24,6 +24,7 @@ package com.openlattice.launchpad.configuration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Configuration class for running integrations.
@@ -60,5 +61,27 @@ public class IntegrationConfiguration {
     @JsonProperty( INTEGRATIONS )
     public List<Integration> getIntegrations() {
         return integrations;
+    }
+
+    @Override public boolean equals( Object o ) {
+        if ( this == o ) { return true; }
+        if ( !( o instanceof IntegrationConfiguration ) ) { return false; }
+        IntegrationConfiguration that = (IntegrationConfiguration) o;
+        return Objects.equals( name, that.name ) &&
+                Objects.equals( description, that.description ) &&
+                Objects.equals( integrations, that.integrations );
+    }
+
+    @Override public int hashCode() {
+
+        return Objects.hash( name, description, integrations );
+    }
+
+    @Override public String toString() {
+        return "IntegrationConfiguration{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", integrations=" + integrations +
+                '}';
     }
 }
