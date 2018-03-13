@@ -23,6 +23,7 @@ package com.openlattice.launchpad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -60,5 +61,19 @@ public class  Integration {
     @JsonProperty( DESTINATION )
     public LaunchpadDestination getDestination() {
         return destination;
+    }
+
+    @Override public boolean equals( Object o ) {
+        if ( this == o ) { return true; }
+        if ( !( o instanceof Integration ) ) { return false; }
+        Integration that = (Integration) o;
+        return Objects.equals( name, that.name ) &&
+                Objects.equals( source, that.source ) &&
+                Objects.equals( destination, that.destination );
+    }
+
+    @Override public int hashCode() {
+
+        return Objects.hash( name, source, destination );
     }
 }
