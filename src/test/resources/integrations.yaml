@@ -18,7 +18,7 @@ integrations:
   - name: demo_health
     source:
       url: "jdbc:postgresql://athena.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
-      sql: "( select * from demo_health where \"FirstName\" = 'Jennifer') dh"t
+      sql: "( select * from demo_health where \"FirstName\" = 'Jennifer') dh"
       username: "example_user"
       password: "examplepassword"
       driver: org.postgresql.Driver
