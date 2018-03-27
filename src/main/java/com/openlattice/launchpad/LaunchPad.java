@@ -42,6 +42,7 @@ public class LaunchPad {
 
         IntegrationConfiguration integrationConfiguration = mapper
                 .readValue( integrationFile, IntegrationConfiguration.class );
+        runIntegrations( integrationConfiguration );
     }
 
     @VisibleForTesting
