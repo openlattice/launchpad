@@ -45,7 +45,7 @@ if (GC == 'null' || GC == null || GC == "") {
 }
 
 
-mainClassName = "com.openlattice.launchpad.Coupling"
+mainClassName = "com.openlattice.launchpad.LaunchPad"
 applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
