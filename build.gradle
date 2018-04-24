@@ -99,7 +99,7 @@ dependencies {
 
     compile 'commons-cli:commons-cli:1.4'
 
-    compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
+//    compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
     compile 'org.postgresql:postgresql:42.1.4'
     compile 'com.zaxxer:HikariCP:2.7.1'
 
@@ -124,6 +124,8 @@ dependencies {
 
     compile "org.ow2.asm:asm:5.0.4"
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    compile filetree("/lib")
 
     /*
      * TESTING
