@@ -125,7 +125,7 @@ dependencies {
     compile "org.ow2.asm:asm:5.0.4"
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    compile filetree("/lib")
+    compile fileTree(dir: "/lib")
 
     /*
      * TESTING
