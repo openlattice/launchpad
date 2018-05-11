@@ -29,7 +29,7 @@ import java.util.Optional;
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
-public class  Integration {
+public class Integration {
     private static final String NAME        = "name";
     private static final String SOURCE      = "source";
     private static final String DESTINATION = "destination";
@@ -75,5 +75,13 @@ public class  Integration {
     @Override public int hashCode() {
 
         return Objects.hash( name, source, destination );
+    }
+
+    @Override public String toString() {
+        return "Integration{" +
+                "name='" + name + '\'' +
+                ", source=" + source +
+                ", destination=" + destination +
+                '}';
     }
 }
