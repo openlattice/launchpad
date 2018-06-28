@@ -70,7 +70,6 @@ public class LaunchPad {
                     ds.write().orc( integration.getDestination().getWriteUrl() );
                     break;
                 default:
-
                     ds.write()
                             .option( "batchsize", integration.getDestination().getBatchSize() )
                             .option( "driver", integration.getDestination().getWriteDriver() )
