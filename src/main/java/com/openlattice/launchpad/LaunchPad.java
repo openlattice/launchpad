@@ -19,6 +19,8 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
@@ -30,6 +32,8 @@ public class LaunchPad {
             .master( "local[" + Runtime.getRuntime().availableProcessors() + "]" )
             .appName( "integration" )
             .getOrCreate();
+
+    private static final Logger logger = LoggerFactory.getLogger( LaunchPad.class );
 
     public static void main( String[] args ) throws ParseException, IOException {
         CommandLine cl = LaunchPadCli.parseCommandLine( args );
@@ -50,7 +54,10 @@ public class LaunchPad {
         List<Integration> integrations = integrationConfiguration.getIntegrations();
 
         for ( Integration integration : integrations ) {
+            logger.info( "Running integration: {}", integration );
+
             Dataset<Row> ds = getSourceDataset( integration );
+            logger.info( "Read from source: {}", integration.getSource() );
             //Only CSV and JDBC are tested.
             switch ( integration.getDestination().getWriteDriver() ) {
                 case CSV_DRIVER:
@@ -71,6 +78,7 @@ public class LaunchPad {
                                     integration.getDestination().getWriteTable(),
                                     integration.getDestination().getProperties() );
             }
+            logger.info( "Wrote to destination: {}", integration.getDestination() );
         }
     }
 
