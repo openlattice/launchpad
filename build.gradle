@@ -108,7 +108,7 @@ dependencies {
     compile 'com.zaxxer:HikariCP:2.7.1'
     compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
     compile 'org.postgresql:postgresql:42.1.4'
-    compile fileTree(dir: 'lib', include: '*.jar')
+    compile fileTree(dir: 'lib/', include: '*.jar')
 //    compile 'oracle:ojdbc6:11.2.0.3'
 
     compile "org.apache.spark:spark-core_2.11:${spark_version}"

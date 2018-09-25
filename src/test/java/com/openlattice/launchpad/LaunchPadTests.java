@@ -21,8 +21,6 @@
 
 package com.openlattice.launchpad;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.openlattice.launchpad.configuration.IntegrationConfiguration;
 import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
 import java.io.IOException;
 import org.junit.Test;
@@ -34,5 +32,10 @@ public class LaunchPadTests {
     @Test
     public void runIntegration() throws IOException {
         LaunchPad.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
+    }
+
+    @Test
+    public void testLoadOracleDriver() throws IOException {
+        LaunchPad.runIntegrations( IntegrationConfigurationTests.readOracleIntegrationConfiguration() );
     }
 }

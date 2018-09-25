@@ -1,0 +1,17 @@
+name: "example_filetransfer"
+description: "Copying over data from demo health table into OpenLattice server"
+integrations:
+  - name: demo_justice
+    source:
+      url: "jdbc:oracle:thin:@localhost:49161:xe"
+      sql: demo_justice_OLcopy
+      username: "system"
+      password: "oracle"
+      driver: oracle.jdbc.driver.OracleDriver
+      fetchSize: 20000
+    destination:
+      url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+      driver: org.postgresql.Driver
+      table: "oracle_test2"
+      username: "example_user"
+      password: "examplepassword"
