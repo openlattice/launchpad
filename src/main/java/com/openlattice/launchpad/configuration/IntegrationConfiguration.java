@@ -30,8 +30,8 @@ import java.util.Objects;
  * Configuration class for running integrations.
  */
 public class IntegrationConfiguration {
-    private static final String USERNAME     = "name";
-    private static final String PASSWORD     = "description";
+    private static final String NAME         = "name";
+    private static final String DESCRIPTION  = "description";
     private static final String INTEGRATIONS = "integrations";
 
     private final String            name;
@@ -40,20 +40,20 @@ public class IntegrationConfiguration {
 
     @JsonCreator
     public IntegrationConfiguration(
-            @JsonProperty( USERNAME ) String name,
-            @JsonProperty( PASSWORD ) String description,
+            @JsonProperty( NAME ) String name,
+            @JsonProperty( DESCRIPTION ) String description,
             @JsonProperty( INTEGRATIONS ) List<Integration> integrations ) {
         this.name = name;
         this.description = description;
         this.integrations = integrations;
     }
 
-    @JsonProperty( USERNAME )
+    @JsonProperty( NAME )
     public String getName() {
         return name;
     }
 
-    @JsonProperty( PASSWORD )
+    @JsonProperty( DESCRIPTION )
     public String getDescription() {
         return description;
     }
