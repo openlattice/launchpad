@@ -11,8 +11,8 @@ import org.apache.commons.cli.ParseException;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchPadCli {
-    public static String HELP    = "help";
-    public static String FILE    = "file";
+    public static final String HELP    = "help";
+    public static final String FILE    = "file";
 
     private static Options           options = new Options();
     private static CommandLineParser clp     = new DefaultParser();

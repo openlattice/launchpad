@@ -12,6 +12,7 @@ import com.openlattice.launchpad.configuration.IntegrationConfiguration;
 import com.openlattice.launchpad.configuration.IntegrationRunner;
 import com.openlattice.launchpad.configuration.LaunchpadDatasource;
 import com.openlattice.launchpad.configuration.LaunchpadDestination;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Main class for running launchpad.
  */
+@SuppressFBWarnings(value = "SECPTI", justification = "User input for file is considered trusted.")
 public class LaunchPad {
     public static final  String       CSV_DRIVER   = "com.openlattice.launchpad.Csv";
     private static final ObjectMapper mapper       = createYamlMapper();

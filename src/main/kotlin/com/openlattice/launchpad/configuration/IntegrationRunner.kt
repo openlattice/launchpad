@@ -28,6 +28,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule
 import com.google.common.annotations.VisibleForTesting
 import com.openlattice.launchpad.LaunchPad.CSV_DRIVER
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SaveMode
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory
 /**
  *
  */
+@SuppressFBWarnings(value=["BC"], justification = "No cast found")
 class IntegrationRunner {
     companion object {
         private val logger = LoggerFactory.getLogger(IntegrationRunner::class.java)
@@ -50,7 +52,7 @@ class IntegrationRunner {
         fun runIntegrations(integrationConfiguration: IntegrationConfiguration) {
             val integrations = integrationConfiguration.integrations
             val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
-            val destinations = integrationConfiguration.destinations.map {it.name to it }.toMap()
+            val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
             integrations.forEach { integration ->
                 val datasource = datasources[integration.datasource.name]!!
@@ -79,6 +81,7 @@ class IntegrationRunner {
             }
         }
 
+        @JvmStatic
         private fun getSourceDataset(datasource: LaunchpadDatasource, integration: Integration): Dataset<Row> {
             when (datasource.driver) {
                 CSV_DRIVER -> return sparkSession
@@ -99,13 +102,4 @@ class IntegrationRunner {
             }
         }
     }
-}
-
-
-internal fun createYamlMapper(): ObjectMapper {
-    val yamlMapper = ObjectMapper(YAMLFactory())
-    yamlMapper.registerModule(Jdk8Module())
-    yamlMapper.registerModule(GuavaModule())
-    yamlMapper.registerModule(AfterburnerModule())
-    return yamlMapper
 }
