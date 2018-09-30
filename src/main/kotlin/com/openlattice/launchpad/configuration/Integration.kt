@@ -27,8 +27,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
  *
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
-const val NAME = "name"
-const val DESCRIPTION = "description"
 const val DATASOURCE = "datasource"
 const val DESTINATION = "destination"
 
@@ -36,8 +34,5 @@ data class Integration(
         @JsonProperty(NAME) val name: String,
         @JsonProperty(DESCRIPTION) val description: String,
         @JsonProperty(DATASOURCE) val datasource: DatasourceQuery,
-        @JsonProperty(DESTINATION) val destination: DestinationTable,
-        val destinationSql: String
-) {
-
-}
+        @JsonProperty(DESTINATION) val destination: WriteDestination
+)

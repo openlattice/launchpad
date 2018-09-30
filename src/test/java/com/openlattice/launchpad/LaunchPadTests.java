@@ -22,6 +22,7 @@
 package com.openlattice.launchpad;
 
 import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
+import com.openlattice.launchpad.configuration.IntegrationRunner;
 import java.io.IOException;
 import org.junit.Test;
 
@@ -31,11 +32,11 @@ import org.junit.Test;
 public class LaunchPadTests {
     @Test
     public void runIntegration() throws IOException {
-        LaunchPad.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
+        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
     }
 
     @Test
     public void testLoadOracleDriver() throws IOException {
-        LaunchPad.runIntegrations( IntegrationConfigurationTests.readOracleIntegrationConfiguration() );
+        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readOracleIntegrationConfiguration() );
     }
 }

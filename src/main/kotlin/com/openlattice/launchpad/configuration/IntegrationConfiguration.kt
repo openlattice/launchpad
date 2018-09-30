@@ -23,13 +23,21 @@ package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
+const val NAME = "name"
+const val DATASOURCES = "datasources"
+const val DESTINATIONS = "destinations"
+const val DESCRIPTION = "description"
+const val INTEGRATIONS = "integrations"
 
-const val DESTINATION_NAME = "destination"
-const val DESTINATION_TABLE = "table"
-
-data class DestinationTable(
-        @JsonProperty(DESTINATION_NAME) val destination: String,
-        @JsonProperty(DESTINATION_TABLE) val table: String
+/**
+ *
+ * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
+ */
+data class IntegrationConfiguration(
+        @JsonProperty(NAME) val name: String,
+        @JsonProperty(DESCRIPTION) val description: String,
+        @JsonProperty(DATASOURCES) val datasources: List<LaunchpadDatasource>,
+        @JsonProperty(DESTINATIONS) val destinations: List<LaunchpadDestination>,
+        @JsonProperty(INTEGRATIONS) val integrations: List<Integration>
 ) {
-
 }

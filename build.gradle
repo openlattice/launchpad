@@ -5,8 +5,8 @@ plugins {
     id "idea"
     id "jacoco"
     id 'com.github.spotbugs' version '1.6.2'
-    id 'org.jetbrains.kotlin.jvm' version '1.2.51'
-    id 'org.jetbrains.kotlin.plugin.spring' version '1.2.51'
+    id 'org.jetbrains.kotlin.jvm' version '1.2.71'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.2.71'
 }
 
 description = "Launchpad"
@@ -85,7 +85,8 @@ jar {
         }
     }
 }
-ext.jv = "2.6.5"
+ext.jv = jackson_version
+        //"2.8.11"
 dependencies {
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.7.1'
     compileOnly 'net.jcip:jcip-annotations:1.0'
@@ -109,7 +110,7 @@ dependencies {
     compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
     compile 'org.postgresql:postgresql:42.1.4'
     compile fileTree(dir: 'lib/', include: '*.jar')
-//    compile 'oracle:ojdbc6:11.2.0.3'
+
 
     compile "org.apache.spark:spark-core_2.11:${spark_version}"
     compile "org.apache.spark:spark-sql_2.11:${spark_version}"
@@ -126,9 +127,10 @@ dependencies {
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jv}"
     compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jv}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jv}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson_version}"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jv}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jv}"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jv}"
+    compile "com.fasterxml.jackson.module:jackson-module-scala_2.11:${jv}"
     compile 'org.yaml:snakeyaml:${snakeyaml_version}'
 
     compile "org.ow2.asm:asm:5.0.4"

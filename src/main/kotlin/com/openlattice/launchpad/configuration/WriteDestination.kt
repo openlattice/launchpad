@@ -24,11 +24,9 @@ package com.openlattice.launchpad.configuration
 import com.fasterxml.jackson.annotation.JsonProperty
 
 
-const val QUERY = "query"
-/**
- * Data class describing a reference to a integration name and the query that will be executed against it.
- */
-class DatasourceQuery(
+const val DESTINATION_TABLE = "table"
+
+data class WriteDestination(
         @JsonProperty(NAME) val name: String,
-        @JsonProperty(QUERY) val query: String
+        @JsonProperty(DESTINATION_TABLE) val table: String
 )
