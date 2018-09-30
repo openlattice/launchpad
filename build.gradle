@@ -19,8 +19,8 @@ ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.g
 
 apply from: "https://raw.githubusercontent.com/openlattice/gradles/master/openlattice.gradle"
 
-def LAUNCHPAD_XMS = "$System.env.COUPLER_XMS"
-def LAUNCHPAD_XMX = "$System.env.COUPLER_XMX"
+def LAUNCHPAD_XMS = "$System.env.LAUNCHPAD_XMS"
+def LAUNCHPAD_XMX = "$System.env.LAUNCHAPD_XMX"
 def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
 def PARALLEL = "$System.env.PARALLELISM"
 def GC = "$System.env.GC"
@@ -62,6 +62,13 @@ run {
 }
 
 println "Enabled profiles: " + Arrays.toString(run.args)
+
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
 
 configurations {
     provided
