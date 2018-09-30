@@ -125,7 +125,6 @@ public class LaunchpadDatasource {
     }
 
     @Override public int hashCode() {
-
         return Objects.hash( name, url, driver, password, user, fetchSize, properties );
     }
 

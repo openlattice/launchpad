@@ -97,6 +97,21 @@ public class LaunchpadDestination {
         return name;
     }
 
+    @Override public boolean equals( Object o ) {
+        if ( this == o ) { return true; }
+        if ( !( o instanceof LaunchpadDestination ) ) { return false; }
+        LaunchpadDestination that = (LaunchpadDestination) o;
+        return batchSize == that.batchSize &&
+                Objects.equals( name, that.name ) &&
+                Objects.equals( writeUrl, that.writeUrl ) &&
+                Objects.equals( writeDriver, that.writeDriver ) &&
+                Objects.equals( properties, that.properties );
+    }
+
+    @Override public int hashCode() {
+        return Objects.hash( name, writeUrl, writeDriver, properties, batchSize );
+    }
+
     @JsonIgnore
     public HikariDataSource getHikariDatasource() {
         HikariConfig hc = new HikariConfig( properties );
@@ -111,21 +126,6 @@ public class LaunchpadDestination {
                 ", properties=" + properties +
                 ", batchSize=" + batchSize +
                 '}';
-    }
-
-    @Override public boolean equals( Object o ) {
-        if ( this == o ) { return true; }
-        if ( !( o instanceof LaunchpadDestination ) ) { return false; }
-        LaunchpadDestination that = (LaunchpadDestination) o;
-        return batchSize == that.batchSize &&
-                Objects.equals( writeUrl, that.writeUrl ) &&
-                Objects.equals( writeDriver, that.writeDriver ) &&
-                Objects.equals( properties, that.properties );
-    }
-
-    @Override public int hashCode() {
-
-        return Objects.hash( writeUrl, writeDriver, properties, batchSize );
     }
 
 }

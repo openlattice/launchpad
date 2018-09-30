@@ -28,7 +28,7 @@ const val QUERY = "query"
 /**
  * Data class describing a reference to a integration name and the query that will be executed against it.
  */
-class DatasourceQuery(
+data class DatasourceQuery(
         @JsonProperty(NAME) val name: String,
         @JsonProperty(QUERY) val query: String
 )

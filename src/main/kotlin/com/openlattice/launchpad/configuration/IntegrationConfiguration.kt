@@ -39,5 +39,4 @@ data class IntegrationConfiguration(
         @JsonProperty(DATASOURCES) val datasources: List<LaunchpadDatasource>,
         @JsonProperty(DESTINATIONS) val destinations: List<LaunchpadDestination>,
         @JsonProperty(INTEGRATIONS) val integrations: List<Integration>
-) {
-}
+)
