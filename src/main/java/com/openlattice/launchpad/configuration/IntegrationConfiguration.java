@@ -36,6 +36,8 @@ public class IntegrationConfiguration {
 
     private final String            name;
     private final String            description;
+    private final List<LaunchpadDatasource> datasources;
+    private final List<LaunchpadDestination> destinations;
     private final List<Integration> integrations;
 
     @JsonCreator

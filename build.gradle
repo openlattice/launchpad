@@ -126,8 +126,9 @@ dependencies {
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jv}"
     compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jv}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jv}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jv}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jv}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson_version}"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}"
     compile 'org.yaml:snakeyaml:${snakeyaml_version}'
 
     compile "org.ow2.asm:asm:5.0.4"
