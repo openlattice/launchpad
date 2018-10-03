@@ -31,13 +31,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.core.tools.picocli.CommandLine.MissingParameterException;
 
 /**
- * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
+ * Represents a name for data integrations.
  */
 public class LaunchpadDatasource {
     private static final String NAME       = "name";
     private static final String URL        = "url";
     private static final String DRIVER     = "driver";
-    private static final String SQL        = "sql";
     private static final String USER       = "username";
     private static final String PASSWORD   = "password";
     private static final String FETCH_SIZE = "fetchSize";
@@ -45,23 +44,20 @@ public class LaunchpadDatasource {
     private final String     name;
     private final String     url;
     private final String     driver;
-    private final String     sql;
     private final String     password;
     private final String     user;
     private final int        fetchSize;
     private final Properties properties;
 
     public LaunchpadDatasource(
-            @JsonProperty( NAME ) Optional<String> name,
+            @JsonProperty( NAME ) String name,
             @JsonProperty( URL ) String url,
             @JsonProperty( DRIVER ) String driver,
-            @JsonProperty( SQL ) String sql,
             @JsonProperty( USER ) Optional<String> user,
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize ) {
-        this.name = name.orElse( "Unnamed Datasource" );
+        this.name = name;
         this.url = url;
-        this.sql = sql;
         this.driver = driver;
         if ( !StringUtils.equals( LaunchPad.CSV_DRIVER, driver ) ) {
             this.user = user.orElseThrow( () -> new MissingParameterException(
@@ -95,11 +91,6 @@ public class LaunchpadDatasource {
         return url;
     }
 
-    @JsonProperty( SQL )
-    public String getSql() {
-        return sql;
-    }
-
     @JsonProperty( DRIVER )
     public String getDriver() {
         return driver;
@@ -128,15 +119,13 @@ public class LaunchpadDatasource {
                 Objects.equals( name, that.name ) &&
                 Objects.equals( url, that.url ) &&
                 Objects.equals( driver, that.driver ) &&
-                Objects.equals( sql, that.sql ) &&
                 Objects.equals( password, that.password ) &&
                 Objects.equals( user, that.user ) &&
                 Objects.equals( properties, that.properties );
     }
 
     @Override public int hashCode() {
-
-        return Objects.hash( name, url, driver, sql, password, user, fetchSize, properties );
+        return Objects.hash( name, url, driver, password, user, fetchSize, properties );
     }
 
     @Override public String toString() {
@@ -144,7 +133,6 @@ public class LaunchpadDatasource {
                 "name='" + name + '\'' +
                 ", url='" + url + '\'' +
                 ", driver='" + driver + '\'' +
-                ", sql='" + sql + '\'' +
                 ", password='" + password + '\'' +
                 ", user='" + user + '\'' +
                 ", fetchSize=" + fetchSize +

@@ -19,26 +19,16 @@
  *
  */
 
-package com.openlattice.launchpad;
+package com.openlattice.launchpad.configuration
 
-import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
-import com.openlattice.launchpad.configuration.IntegrationRunner;
-import java.io.IOException;
-import org.junit.Ignore;
-import org.junit.Test;
+import com.fasterxml.jackson.annotation.JsonProperty
 
+
+const val QUERY = "query"
 /**
- * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
+ * Data class describing a reference to a integration name and the query that will be executed against it.
  */
-public class LaunchPadTests {
-    @Test
-    public void runIntegration() throws IOException {
-        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
-    }
-
-    @Test
-    @Ignore
-    public void testLoadOracleDriver() throws IOException {
-        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readOracleIntegrationConfiguration() );
-    }
-}
+data class DatasourceQuery(
+        @JsonProperty(NAME) val name: String,
+        @JsonProperty(QUERY) val query: String
+)

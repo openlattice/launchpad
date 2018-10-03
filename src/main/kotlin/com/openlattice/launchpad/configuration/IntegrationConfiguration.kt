@@ -19,26 +19,24 @@
  *
  */
 
-package com.openlattice.launchpad;
+package com.openlattice.launchpad.configuration
 
-import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
-import com.openlattice.launchpad.configuration.IntegrationRunner;
-import java.io.IOException;
-import org.junit.Ignore;
-import org.junit.Test;
+import com.fasterxml.jackson.annotation.JsonProperty
+
+const val NAME = "name"
+const val DATASOURCES = "datasources"
+const val DESTINATIONS = "destinations"
+const val DESCRIPTION = "description"
+const val INTEGRATIONS = "integrations"
 
 /**
+ *
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
-public class LaunchPadTests {
-    @Test
-    public void runIntegration() throws IOException {
-        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
-    }
-
-    @Test
-    @Ignore
-    public void testLoadOracleDriver() throws IOException {
-        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readOracleIntegrationConfiguration() );
-    }
-}
+data class IntegrationConfiguration(
+        @JsonProperty(NAME) val name: String,
+        @JsonProperty(DESCRIPTION) val description: String,
+        @JsonProperty(DATASOURCES) val datasources: List<LaunchpadDatasource>,
+        @JsonProperty(DESTINATIONS) val destinations: List<LaunchpadDestination>,
+        @JsonProperty(INTEGRATIONS) val integrations: List<Integration>
+)

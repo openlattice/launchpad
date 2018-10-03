@@ -23,11 +23,13 @@ package com.openlattice.launchpad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,37 +37,39 @@ import org.slf4j.LoggerFactory;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchpadDestination {
+    private static final String NAME         = "name";
     private static final String WRITE_URL    = "url";
     private static final String WRITE_DRIVER = "driver";
-    private static final String USER       = "username";
-    private static final String PASSWORD   = "password";
+    private static final String USER         = "username";
+    private static final String PASSWORD     = "password";
 
-    private static final String PROPERTIES   = "properties";
-    private static final String WRITE_TABLE  = "table";
-    private static final String BATCH_SIZE ="batchSize";
-    private static final int DEFAULT_BATCH_SIZE = 20000;
-    private static       Logger logger       = LoggerFactory.getLogger( LaunchpadDestination.class );
-    private final String            writeUrl;
-    private final String            writeDriver;
-    private final String            writeTable;
-    private final Properties        properties;
-    private final int batchSize;
+    private static final String PROPERTIES         = "properties";
+    private static final String BATCH_SIZE         = "batchSize";
+    private static final int    DEFAULT_BATCH_SIZE = 20000;
+    private static final Logger logger             = LoggerFactory.getLogger( LaunchpadDestination.class );
+
+    private final String     name;
+    private final String     writeUrl;
+    private final String     writeDriver;
+    private final Properties properties;
+    private final int        batchSize;
 
     public LaunchpadDestination(
+            @JsonProperty( NAME ) String name,
             @JsonProperty( WRITE_URL ) String writeUrl,
             @JsonProperty( WRITE_DRIVER ) String writeDriver,
-            @JsonProperty( WRITE_TABLE ) String writeTable,
             @JsonProperty( USER ) Optional<String> username,
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( PROPERTIES ) Optional<Properties> properties,
             @JsonProperty( BATCH_SIZE ) Optional<Integer> batchSize ) {
+        Preconditions.checkState( StringUtils.isNotBlank( name ), "Name must be specified for a desintation." );
+        this.name = name;
         this.writeUrl = writeUrl;
         this.writeDriver = writeDriver;
-        this.writeTable = writeTable;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
-        this.properties = properties.orElse( new Properties(  ) );
-        username.ifPresent( u -> this.properties.setProperty("user", u) );
-        password.ifPresent( p -> this.properties.setProperty(PASSWORD, p) );
+        this.properties = properties.orElse( new Properties() );
+        username.ifPresent( u -> this.properties.setProperty( "user", u ) );
+        password.ifPresent( p -> this.properties.setProperty( PASSWORD, p ) );
     }
 
     @JsonProperty( WRITE_DRIVER )
@@ -83,14 +87,29 @@ public class LaunchpadDestination {
         return properties;
     }
 
-    @JsonProperty( WRITE_TABLE )
-    public String getWriteTable() {
-        return writeTable;
-    }
-
     @JsonProperty( BATCH_SIZE )
     public int getBatchSize() {
         return batchSize;
+    }
+
+    @JsonProperty( NAME )
+    public String getName() {
+        return name;
+    }
+
+    @Override public boolean equals( Object o ) {
+        if ( this == o ) { return true; }
+        if ( !( o instanceof LaunchpadDestination ) ) { return false; }
+        LaunchpadDestination that = (LaunchpadDestination) o;
+        return batchSize == that.batchSize &&
+                Objects.equals( name, that.name ) &&
+                Objects.equals( writeUrl, that.writeUrl ) &&
+                Objects.equals( writeDriver, that.writeDriver ) &&
+                Objects.equals( properties, that.properties );
+    }
+
+    @Override public int hashCode() {
+        return Objects.hash( name, writeUrl, writeDriver, properties, batchSize );
     }
 
     @JsonIgnore
@@ -104,25 +123,9 @@ public class LaunchpadDestination {
         return "LaunchpadDestination{" +
                 "writeUrl='" + writeUrl + '\'' +
                 ", writeDriver='" + writeDriver + '\'' +
-                ", writeTable='" + writeTable + '\'' +
                 ", properties=" + properties +
                 ", batchSize=" + batchSize +
                 '}';
     }
 
-    @Override public boolean equals( Object o ) {
-        if ( this == o ) { return true; }
-        if ( !( o instanceof LaunchpadDestination ) ) { return false; }
-        LaunchpadDestination that = (LaunchpadDestination) o;
-        return batchSize == that.batchSize &&
-                Objects.equals( writeUrl, that.writeUrl ) &&
-                Objects.equals( writeDriver, that.writeDriver ) &&
-                Objects.equals( writeTable, that.writeTable ) &&
-                Objects.equals( properties, that.properties );
-    }
-
-    @Override public int hashCode() {
-
-        return Objects.hash( writeUrl, writeDriver, writeTable, properties, batchSize );
-    }
 }
