@@ -22,6 +22,8 @@
 package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.common.collect.LinkedHashMultimap
+import com.google.common.collect.ListMultimap
 
 const val NAME = "name"
 const val DATASOURCES = "datasources"
@@ -38,5 +40,5 @@ data class IntegrationConfiguration(
         @JsonProperty(DESCRIPTION) val description: String,
         @JsonProperty(DATASOURCES) val datasources: List<LaunchpadDatasource>,
         @JsonProperty(DESTINATIONS) val destinations: List<LaunchpadDestination>,
-        @JsonProperty(INTEGRATIONS) val integrations: List<Integration>
+        @JsonProperty(INTEGRATIONS) val integrations: Map<String, ListMultimap<String, Integration>>
 )

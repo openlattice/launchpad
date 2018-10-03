@@ -15,11 +15,8 @@ destinations:
   driver: oracle.jdbc.driver.OracleDriver
   batchSize: 20000
 integrations:
-- name: remotedb
-  description: "Some integration"
-  datasource:
-    name: remotedb
-    query: oracle_test
-  destination:
-    name: localdb
-    table: oracle_test
+  remotedb:
+    localdb:
+      - source: oracle_test
+        destination: oracle_test
+        description: "An oracle integration"

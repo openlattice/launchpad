@@ -37,7 +37,7 @@ public class LaunchPadTests {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testLoadOracleDriver() throws IOException {
         IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readOracleIntegrationConfiguration() );
     }

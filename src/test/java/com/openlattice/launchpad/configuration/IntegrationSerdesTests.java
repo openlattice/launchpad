@@ -30,7 +30,8 @@ import java.io.IOException;
 public class IntegrationSerdesTests extends AbstractJacksonSerializationTest<Integration> {
     @Override protected Integration getSampleData() {
         try {
-            return IntegrationConfigurationTests.readIntegrationConfiguration().getIntegrations().iterator().next();
+            return IntegrationConfigurationTests.readIntegrationConfiguration().getIntegrations().values().iterator()
+                    .next().values().iterator().next();
         } catch ( IOException e ) {
             return null;
         }
