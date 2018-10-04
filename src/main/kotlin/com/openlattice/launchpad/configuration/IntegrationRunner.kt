@@ -27,6 +27,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule
 import com.google.common.annotations.VisibleForTesting
+import com.google.common.collect.Multimaps
 import com.openlattice.launchpad.LaunchPad.CSV_DRIVER
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.apache.spark.sql.Dataset
@@ -38,7 +39,7 @@ import org.slf4j.LoggerFactory
 /**
  *
  */
-@SuppressFBWarnings(value=["BC"], justification = "No cast found")
+@SuppressFBWarnings(value = ["BC"], justification = "No cast found")
 class IntegrationRunner {
     companion object {
         private val logger = LoggerFactory.getLogger(IntegrationRunner::class.java)
@@ -54,30 +55,36 @@ class IntegrationRunner {
             val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
-            integrations.forEach { integration ->
-                val datasource = datasources[integration.datasource.name]!!
-                val destination = destinations[integration.destination.name]!!
 
-                logger.info("Running integration: {}", integration)
+            integrations.forEach { datasourceName, destinationsForDatasource ->
+                val datasource = datasources[datasourceName]!!
 
-                val ds = getSourceDataset(datasource, integration)
-                logger.info("Read from source: {}", datasource)
-                //Only CSV and JDBC are tested.
-                when (destination.writeDriver) {
-                    CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
-                    "parquet" -> ds.write().parquet(destination.writeUrl)
-                    "orc" -> ds.write().orc(destination.writeUrl)
-                    else -> ds.write()
-                            .option("batchsize", destination.batchSize.toLong())
-                            .option("driver", destination.writeDriver)
-                            .mode(SaveMode.Overwrite)
-                            .jdbc(
-                                    destination.writeUrl,
-                                    integration.destination.table,
-                                    destination.properties
-                            )
+                Multimaps.asMap(destinationsForDatasource).forEach { destinationName, integrations ->
+                    integrations.forEach { integration ->
+                        val destination = destinations[destinationName]!!
+
+                        logger.info("Running integration: {}", integration)
+
+                        val ds = getSourceDataset(datasource, integration)
+                        logger.info("Read from source: {}", datasource)
+                        //Only CSV and JDBC are tested.
+                        when (destination.writeDriver) {
+                            CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
+                            "parquet" -> ds.write().parquet(destination.writeUrl)
+                            "orc" -> ds.write().orc(destination.writeUrl)
+                            else -> ds.write()
+                                    .option("batchsize", destination.batchSize.toLong())
+                                    .option("driver", destination.writeDriver)
+                                    .mode(SaveMode.Overwrite)
+                                    .jdbc(
+                                            destination.writeUrl,
+                                            integration.destination,
+                                            destination.properties
+                                    )
+                        }
+                        logger.info("Wrote to name: {}", destination)
+                    }
                 }
-                logger.info("Wrote to name: {}", destination)
             }
         }
 
@@ -93,7 +100,7 @@ class IntegrationRunner {
                         .read()
                         .format("jdbc")
                         .option("url", datasource.url)
-                        .option("dbtable", integration.datasource.query)
+                        .option("dbtable", integration.source)
                         .option("user", datasource.user)
                         .option("password", datasource.password)
                         .option("driver", datasource.driver)
