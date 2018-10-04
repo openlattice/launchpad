@@ -14,19 +14,11 @@ destinations:
   username: "oltest"
   password: "test"
 integrations:
-- name: demo_justice
-  description: "Some integration"
-  datasource:
-    name: remotedb
-    query: "demo_justice"
-  destination:
-    name: localdb
-    table: demo_justice_OLcopy
-- name: demo_health
-  description: "Some integration"
-  datasource:
-    name: remotedb
-    query: "( select * from demo_health where \"FirstName\" = 'Jennifer') dh"
-  destination:
-    name: localdb
-    table: demo_health_subset_OLcopy
+  remotedb:
+    localdb:
+      - source: "demo_justice"
+        destination: demo_justice_OLcopy
+        description: "Some other integration"
+      - source: "( select * from demo_health where \"FirstName\" = 'Jennifer') dh"
+        destination: demo_health_subset_OLcopy
+        description: "Some integration"
