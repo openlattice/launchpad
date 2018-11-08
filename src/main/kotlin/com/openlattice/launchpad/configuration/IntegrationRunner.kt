@@ -93,7 +93,7 @@ class IntegrationRunner {
             when (datasource.driver) {
                 CSV_DRIVER -> return sparkSession
                         .read()
-                        .option("header", true)
+                        .option("header", datasource.isHeader)
                         .option("inferSchema", true)
                         .csv(datasource.url)
                 else -> return sparkSession
