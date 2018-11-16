@@ -35,6 +35,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+import java.io.File
 
 /**
  *
@@ -95,7 +96,7 @@ class IntegrationRunner {
                         .read()
                         .option("header", true)
                         .option("inferSchema", true)
-                        .csv(datasource.url)
+                        .csv(datasource.url + integration.source)
                 else -> return sparkSession
                         .read()
                         .format("jdbc")
