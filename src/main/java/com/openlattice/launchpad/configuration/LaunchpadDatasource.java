@@ -21,9 +21,11 @@
 
 package com.openlattice.launchpad.configuration;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.openlattice.launchpad.LaunchPad.CSV_DRIVER;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.openlattice.launchpad.LaunchPad;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -40,6 +42,7 @@ public class LaunchpadDatasource {
     private static final String USER       = "username";
     private static final String PASSWORD   = "password";
     private static final String FETCH_SIZE = "fetchSize";
+    private static final String HEADER     = "header";
 
     private final String     name;
     private final String     url;
@@ -47,6 +50,7 @@ public class LaunchpadDatasource {
     private final String     password;
     private final String     user;
     private final int        fetchSize;
+    private final boolean    header;
     private final Properties properties;
 
     public LaunchpadDatasource(
@@ -55,11 +59,14 @@ public class LaunchpadDatasource {
             @JsonProperty( DRIVER ) String driver,
             @JsonProperty( USER ) Optional<String> user,
             @JsonProperty( PASSWORD ) Optional<String> password,
-            @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize ) {
+            @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize,
+            @JsonProperty( HEADER ) Optional<Boolean> header ) {
+//        checkState( header.map( hasHeader -> hasHeader && CSV_DRIVER.equals( driver ) ).orElse( true ),
+//                "header can only be set for csv" );
         this.name = name;
         this.url = url;
         this.driver = driver;
-        if ( !StringUtils.equals( LaunchPad.CSV_DRIVER, driver ) ) {
+        if ( !StringUtils.equals( CSV_DRIVER, driver ) ) {
             this.user = user.orElseThrow( () -> new MissingParameterException(
                     "A username must be specified for database connections." ) );
         } else {
@@ -74,6 +81,12 @@ public class LaunchpadDatasource {
         properties.setProperty( "user", this.user );
         properties.setProperty( "password", this.password );
         properties.setProperty( "driver", this.driver );
+        this.header = header.orElse( false );
+    }
+
+    @JsonProperty( HEADER )
+    public boolean isHeader() {
+        return header;
     }
 
     @JsonProperty( NAME )
