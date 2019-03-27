@@ -19,25 +19,26 @@
  *
  */
 
-package com.openlattice.launchpad.configuration;
+package com.openlattice.launchpad.configuration
 
-import com.openlattice.launchpad.AbstractJacksonSerializationTest;
-import java.io.IOException;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.common.collect.LinkedHashMultimap
+import com.google.common.collect.ListMultimap
+
+const val NAME = "name"
+const val DATASOURCES = "datasources"
+const val DESTINATIONS = "destinations"
+const val DESCRIPTION = "description"
+const val INTEGRATIONS = "integrations"
 
 /**
+ *
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
-public class IntegrationSerdesTests extends AbstractJacksonSerializationTest<Integration> {
-    @Override protected Integration getSampleData() {
-        try {
-            return IntegrationConfigurationTests.readIntegrationConfiguration().getIntegrations().values().iterator()
-                    .next().values().iterator().next();
-        } catch ( IOException e ) {
-            return null;
-        }
-    }
-
-    @Override protected Class<Integration> getClazz() {
-        return Integration.class;
-    }
-}
+data class IntegrationConfiguration(
+        @JsonProperty(NAME) val name: String,
+        @JsonProperty(DESCRIPTION) val description: String,
+        @JsonProperty(DATASOURCES) val datasources: List<LaunchpadDatasource>,
+        @JsonProperty(DESTINATIONS) val destinations: List<LaunchpadDestination>,
+        @JsonProperty(INTEGRATIONS) val integrations: Map<String, ListMultimap<String, Integration>>
+)

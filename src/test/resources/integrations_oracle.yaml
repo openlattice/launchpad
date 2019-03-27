@@ -1,0 +1,22 @@
+name: "example_filetransfer"
+description: "Copying over data from demo health table into OpenLattice server"
+datasources:
+- name: remotedb
+  url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+  driver: org.postgresql.Driver
+  username: "example_user"
+  password: "examplepassword"
+  fetchSize: 20000
+destinations:
+- name: localdb
+  url: "jdbc:oracle:thin:@localhost:49161:xe"
+  username: "system"
+  password: "oracle"
+  driver: oracle.jdbc.driver.OracleDriver
+  batchSize: 20000
+integrations:
+  remotedb:
+    localdb:
+      - source: oracle_test
+        destination: oracle_test
+        description: "An oracle integration"

@@ -21,9 +21,11 @@
 
 package com.openlattice.launchpad.configuration;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.openlattice.launchpad.LaunchPad.CSV_DRIVER;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.openlattice.launchpad.LaunchPad;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -31,39 +33,40 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.core.tools.picocli.CommandLine.MissingParameterException;
 
 /**
- * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
+ * Represents a name for data integrations.
  */
 public class LaunchpadDatasource {
     private static final String NAME       = "name";
     private static final String URL        = "url";
     private static final String DRIVER     = "driver";
-    private static final String SQL        = "sql";
     private static final String USER       = "username";
     private static final String PASSWORD   = "password";
     private static final String FETCH_SIZE = "fetchSize";
+    private static final String HEADER     = "header";
 
     private final String     name;
     private final String     url;
     private final String     driver;
-    private final String     sql;
     private final String     password;
     private final String     user;
     private final int        fetchSize;
+    private final boolean    header;
     private final Properties properties;
 
     public LaunchpadDatasource(
-            @JsonProperty( NAME ) Optional<String> name,
+            @JsonProperty( NAME ) String name,
             @JsonProperty( URL ) String url,
             @JsonProperty( DRIVER ) String driver,
-            @JsonProperty( SQL ) String sql,
             @JsonProperty( USER ) Optional<String> user,
             @JsonProperty( PASSWORD ) Optional<String> password,
-            @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize ) {
-        this.name = name.orElse( "Unnamed Datasource" );
+            @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize,
+            @JsonProperty( HEADER ) Optional<Boolean> header ) {
+//        checkState( header.map( hasHeader -> hasHeader && CSV_DRIVER.equals( driver ) ).orElse( true ),
+//                "header can only be set for csv" );
+        this.name = name;
         this.url = url;
-        this.sql = sql;
         this.driver = driver;
-        if ( !StringUtils.equals( LaunchPad.CSV_DRIVER, driver ) ) {
+        if ( !StringUtils.equals( CSV_DRIVER, driver ) ) {
             this.user = user.orElseThrow( () -> new MissingParameterException(
                     "A username must be specified for database connections." ) );
         } else {
@@ -78,6 +81,12 @@ public class LaunchpadDatasource {
         properties.setProperty( "user", this.user );
         properties.setProperty( "password", this.password );
         properties.setProperty( "driver", this.driver );
+        this.header = header.orElse( false );
+    }
+
+    @JsonProperty( HEADER )
+    public boolean isHeader() {
+        return header;
     }
 
     @JsonProperty( NAME )
@@ -93,11 +102,6 @@ public class LaunchpadDatasource {
     @JsonProperty( URL )
     public String getUrl() {
         return url;
-    }
-
-    @JsonProperty( SQL )
-    public String getSql() {
-        return sql;
     }
 
     @JsonProperty( DRIVER )
@@ -128,15 +132,13 @@ public class LaunchpadDatasource {
                 Objects.equals( name, that.name ) &&
                 Objects.equals( url, that.url ) &&
                 Objects.equals( driver, that.driver ) &&
-                Objects.equals( sql, that.sql ) &&
                 Objects.equals( password, that.password ) &&
                 Objects.equals( user, that.user ) &&
                 Objects.equals( properties, that.properties );
     }
 
     @Override public int hashCode() {
-
-        return Objects.hash( name, url, driver, sql, password, user, fetchSize, properties );
+        return Objects.hash( name, url, driver, password, user, fetchSize, properties );
     }
 
     @Override public String toString() {
@@ -144,7 +146,6 @@ public class LaunchpadDatasource {
                 "name='" + name + '\'' +
                 ", url='" + url + '\'' +
                 ", driver='" + driver + '\'' +
-                ", sql='" + sql + '\'' +
                 ", password='" + password + '\'' +
                 ", user='" + user + '\'' +
                 ", fetchSize=" + fetchSize +

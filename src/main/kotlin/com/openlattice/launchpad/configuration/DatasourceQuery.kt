@@ -19,25 +19,16 @@
  *
  */
 
-package com.openlattice.launchpad.configuration;
+package com.openlattice.launchpad.configuration
 
-import com.openlattice.launchpad.AbstractJacksonSerializationTest;
-import java.io.IOException;
+import com.fasterxml.jackson.annotation.JsonProperty
 
+
+const val QUERY = "query"
 /**
- * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
+ * Data class describing a reference to a integration name and the query that will be executed against it.
  */
-public class IntegrationSerdesTests extends AbstractJacksonSerializationTest<Integration> {
-    @Override protected Integration getSampleData() {
-        try {
-            return IntegrationConfigurationTests.readIntegrationConfiguration().getIntegrations().values().iterator()
-                    .next().values().iterator().next();
-        } catch ( IOException e ) {
-            return null;
-        }
-    }
-
-    @Override protected Class<Integration> getClazz() {
-        return Integration.class;
-    }
-}
+data class DatasourceQuery(
+        @JsonProperty(NAME) val name: String,
+        @JsonProperty(QUERY) val query: String
+)

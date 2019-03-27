@@ -19,25 +19,14 @@
  *
  */
 
-package com.openlattice.launchpad.configuration;
+package com.openlattice.launchpad.configuration
 
-import com.openlattice.launchpad.AbstractJacksonSerializationTest;
-import java.io.IOException;
+import com.fasterxml.jackson.annotation.JsonProperty
 
-/**
- * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
- */
-public class IntegrationSerdesTests extends AbstractJacksonSerializationTest<Integration> {
-    @Override protected Integration getSampleData() {
-        try {
-            return IntegrationConfigurationTests.readIntegrationConfiguration().getIntegrations().values().iterator()
-                    .next().values().iterator().next();
-        } catch ( IOException e ) {
-            return null;
-        }
-    }
 
-    @Override protected Class<Integration> getClazz() {
-        return Integration.class;
-    }
-}
+const val DESTINATION_TABLE = "table"
+
+data class WriteDestination(
+        @JsonProperty(NAME) val name: String,
+        @JsonProperty(DESTINATION_TABLE) val table: String
+)

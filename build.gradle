@@ -4,7 +4,9 @@ plugins {
     id "eclipse"
     id "idea"
     id "jacoco"
-    id "org.jetbrains.kotlin.jvm" version "1.2.30"
+    id 'com.github.spotbugs' version '1.6.6'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.10'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.3.10'
 }
 
 description = "Launchpad"
@@ -16,10 +18,9 @@ ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 
 apply from: "https://raw.githubusercontent.com/openlattice/gradles/master/openlattice.gradle"
-apply plugin: 'kotlin'
 
-def LAUNCHPAD_XMS = "$System.env.COUPLER_XMS"
-def LAUNCHPAD_XMX = "$System.env.COUPLER_XMX"
+def LAUNCHPAD_XMS = "$System.env.LAUNCHPAD_XMS"
+def LAUNCHPAD_XMX = "$System.env.LAUNCHAPD_XMX"
 def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
 def PARALLEL = "$System.env.PARALLELISM"
 def GC = "$System.env.GC"
@@ -62,6 +63,21 @@ run {
 
 println "Enabled profiles: " + Arrays.toString(run.args)
 
+spotbugs {
+    toolVersion = '3.1.9'
+}
+
+jacoco {
+    toolVersion = "0.8.2"
+}
+
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
 configurations {
     provided
 }
@@ -84,8 +100,14 @@ jar {
         }
     }
 }
-ext.jv = "2.6.5"
+ext.jv = jackson_version
+        //"2.8.11"
 dependencies {
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.7.1'
+    compileOnly 'net.jcip:jcip-annotations:1.0'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:3.1.3'
+    testCompileOnly 'net.jcip:jcip-annotations:1.0'
+    testCompileOnly 'com.github.spotbugs:spotbugs-annotations:3.1.3'
 
     /*
      * SL4J + LOG4J2
@@ -99,9 +121,11 @@ dependencies {
 
     compile 'commons-cli:commons-cli:1.4'
 
-//    compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
-    compile 'org.postgresql:postgresql:42.1.4'
     compile 'com.zaxxer:HikariCP:2.7.1'
+    compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
+    compile 'org.postgresql:postgresql:42.2.5'
+    compile fileTree(dir: 'lib/', include: '*.jar')
+
 
     compile "org.apache.spark:spark-core_2.11:${spark_version}"
     compile "org.apache.spark:spark-sql_2.11:${spark_version}"
@@ -120,6 +144,8 @@ dependencies {
     compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jv}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jv}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jv}"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jv}"
+    compile "com.fasterxml.jackson.module:jackson-module-scala_2.11:${jv}"
     compile 'org.yaml:snakeyaml:${snakeyaml_version}'
 
     compile "org.ow2.asm:asm:5.0.4"
