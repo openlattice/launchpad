@@ -58,11 +58,11 @@ class IntegrationRunner {
 
 
             integrations.forEach { datasourceName, destinationsForDatasource ->
-                val datasource = datasources[datasourceName]!!
+                val datasource = datasources.getValue(datasourceName)
 
                 Multimaps.asMap(destinationsForDatasource).forEach { destinationName, integrations ->
                     integrations.forEach { integration ->
-                        val destination = destinations[destinationName]!!
+                        val destination = destinations.getValue(destinationName)
 
                         logger.info("Running integration: {}", integration)
 
