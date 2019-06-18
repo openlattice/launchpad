@@ -28,9 +28,6 @@ import java.util.*
  *
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
-const val SOURCE = "source"
-const val DESTINATION = "destination"
-
 data class Integration(
         @JsonProperty(DESCRIPTION) val description: Optional<String>,
         @JsonProperty(SOURCE) val source: String,

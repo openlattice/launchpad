@@ -23,8 +23,6 @@ package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-
-const val QUERY = "query"
 /**
  * Data class describing a reference to a integration name and the query that will be executed against it.
  */

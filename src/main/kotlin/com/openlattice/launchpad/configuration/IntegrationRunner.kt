@@ -21,21 +21,14 @@
 
 package com.openlattice.launchpad.configuration
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.datatype.guava.GuavaModule
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
-import com.openlattice.launchpad.LaunchPad.CSV_DRIVER
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
-import java.io.File
 
 /**
  *
@@ -70,12 +63,12 @@ class IntegrationRunner {
                         logger.info("Read from source: {}", datasource)
                         //Only CSV and JDBC are tested.
                         when (destination.writeDriver) {
-                            CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
-                            "parquet" -> ds.write().parquet(destination.writeUrl)
-                            "orc" -> ds.write().orc(destination.writeUrl)
+                            CSV_DRIVER -> ds.write().option(HEADER, true).csv(destination.writeUrl)
+                            PARQUET_DRIVER -> ds.write().parquet(destination.writeUrl)
+                            ORC_DRIVER -> ds.write().orc(destination.writeUrl)
                             else -> ds.write()
                                     .option("batchsize", destination.batchSize.toLong())
-                                    .option("driver", destination.writeDriver)
+                                    .option(WRITE_DRIVER, destination.writeDriver)
                                     .mode(SaveMode.Overwrite)
                                     .jdbc(
                                             destination.writeUrl,
@@ -94,17 +87,17 @@ class IntegrationRunner {
             when (datasource.driver) {
                 CSV_DRIVER -> return sparkSession
                         .read()
-                        .option("header", datasource.isHeader)
+                        .option(HEADER, datasource.header)
                         .option("inferSchema", true)
                         .csv(datasource.url + integration.source)
                 else -> return sparkSession
                         .read()
                         .format("jdbc")
-                        .option("url", datasource.url)
+                        .option(URL, datasource.url)
                         .option("dbtable", integration.source)
                         .option("user", datasource.user)
-                        .option("password", datasource.password)
-                        .option("driver", datasource.driver)
+                        .option(PASSWORD, datasource.password)
+                        .option(DRIVER, datasource.driver)
                         .option("fetchSize", datasource.fetchSize.toLong())
                         .load()
             }

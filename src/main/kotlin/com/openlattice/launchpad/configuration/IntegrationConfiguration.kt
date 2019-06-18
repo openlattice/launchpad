@@ -22,14 +22,7 @@
 package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.common.collect.LinkedHashMultimap
 import com.google.common.collect.ListMultimap
-
-const val NAME = "name"
-const val DATASOURCES = "datasources"
-const val DESTINATIONS = "destinations"
-const val DESCRIPTION = "description"
-const val INTEGRATIONS = "integrations"
 
 /**
  *

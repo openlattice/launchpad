@@ -23,9 +23,6 @@ package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-
-const val DESTINATION_TABLE = "table"
-
 data class WriteDestination(
         @JsonProperty(NAME) val name: String,
         @JsonProperty(DESTINATION_TABLE) val table: String
