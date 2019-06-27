@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.lang.Exception
 import java.net.InetAddress
+import java.time.OffsetDateTime
 import java.util.*
 
 /**
@@ -72,11 +73,18 @@ class IntegrationRunner {
             val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
+            destinations.forEach { (_, destination) ->
+                destination.hikariDatasource.connection.use { conn ->
+                    conn.createStatement().use { stmt ->
+                        stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
+                    }
+                }
+            }
 
             integrations.forEach { (datasourceName, destinationsForDatasource) ->
                 val datasource = datasources.getValue(datasourceName)
 
-                Multimaps.asMap(destinationsForDatasource).forEach { destinationName, integrations ->
+                Multimaps.asMap(destinationsForDatasource).forEach { (destinationName, integrations) ->
                     integrations.forEach { integration ->
                         val destination = destinations.getValue(destinationName)
 
@@ -105,7 +113,8 @@ class IntegrationRunner {
                 integration: Integration
         ) {
 
-            logStarted(integrationName, destination, integration)
+            val start = OffsetDateTime.now()
+            logStarted(integrationName, destination, integration, start)
             try {
                 ds.write()
                         .option("batchsize", destination.batchSize.toLong())
@@ -116,20 +125,25 @@ class IntegrationRunner {
                                 integration.destination,
                                 destination.properties
                         )
-                logSuccessful(integrationName, destination, integration)
+                logSuccessful(integrationName, destination, integration, start)
             } catch (ex: Exception) {
-                logFailed(integrationName, destination, integration)
+                logFailed(integrationName, destination, integration, start)
             }
         }
 
-        private fun logStarted(integrationName: String, destination: LaunchpadDestination, integration: Integration) {
+        private fun logStarted(
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration,
+                start: OffsetDateTime
+        ) {
             try {
                 destination.hikariDatasource.connection.use { connection ->
                     connection.prepareStatement(IntegrationTables.LOG_INTEGRATION_STARTED).use { ps ->
                         ps.setString(1, integrationName)
                         ps.setString(2, hostName)
                         ps.setString(3, integration.destination)
-                        ps.setObject(4, System.currentTimeMillis())
+                        ps.setObject(4, start)
                         ps.executeUpdate()
                     }
                 }
@@ -141,7 +155,8 @@ class IntegrationRunner {
         private fun logSuccessful(
                 integrationName: String,
                 destination: LaunchpadDestination,
-                integration: Integration
+                integration: Integration,
+                start: OffsetDateTime
         ) {
             try {
                 destination.hikariDatasource.connection.use { connection ->
@@ -149,7 +164,7 @@ class IntegrationRunner {
                         ps.setString(1, integrationName)
                         ps.setString(2, hostName)
                         ps.setString(3, integration.destination)
-                        ps.setObject(4, System.currentTimeMillis())
+                        ps.setObject(4, start)
                         ps.executeUpdate()
                     }
                 }
@@ -161,7 +176,8 @@ class IntegrationRunner {
         private fun logFailed(
                 integrationName: String,
                 destination: LaunchpadDestination,
-                integration: Integration
+                integration: Integration,
+                start: OffsetDateTime
         ) {
             try {
                 destination.hikariDatasource.connection.use { connection ->
@@ -169,7 +185,7 @@ class IntegrationRunner {
                         ps.setString(1, integrationName)
                         ps.setString(2, hostName)
                         ps.setString(3, integration.destination)
-                        ps.setObject(4, System.currentTimeMillis())
+                        ps.setObject(4, start)
                         ps.executeUpdate()
                     }
                 }

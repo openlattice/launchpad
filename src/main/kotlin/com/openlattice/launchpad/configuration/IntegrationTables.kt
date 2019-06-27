@@ -10,7 +10,7 @@ class IntegrationTables {
         /**
          * SQL query for creating integration table.
          */
-        const val CREATE_INTEGRATION_ACTIVITY_SQL = "CREATE TABLE IF NOT EXISTS integration_activity (integration_name, host_name text, table_name text, start timestamptz DEFAULT 'now()', finish timestamptz DEFAULT = 'infinity', result text, PRIMARY KEY (integration_name, host_name, table_name, start))"
+        const val CREATE_INTEGRATION_ACTIVITY_SQL = "CREATE TABLE IF NOT EXISTS integration_activity (integration_name text, host_name text, table_name text, start timestamptz DEFAULT 'now()', finish timestamptz DEFAULT 'infinity', result text, PRIMARY KEY (integration_name, host_name, table_name, start))"
 
         /**
          * Preparable sql query that logs when an integration begins with the following bind parameters:
@@ -20,7 +20,7 @@ class IntegrationTables {
          * 3. table_name
          * 4. start
          */
-        const val LOG_INTEGRATION_STARTED  = "INSERT INTO integration_activity VALUES (integration_name, host_name, table_name, start) VALUES (?,?,?,?)"
+        const val LOG_INTEGRATION_STARTED  = "INSERT INTO integration_activity (integration_name, host_name, table_name, start) VALUES (?,?,?,?)"
         /**
          * Preparable sql query for logging a successfully completed integration with the following bind parameters:
          *

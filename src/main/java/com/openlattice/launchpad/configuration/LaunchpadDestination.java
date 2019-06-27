@@ -75,7 +75,8 @@ public class LaunchpadDestination {
         this.properties.put(JDBC_URL, writeUrl);
         this.properties.put(MAXIMUM_POOL_SIZE, 1);
         this.properties.put(CONNECTION_TIMEOUT, 120000); //2-minute connection timeout
-        username.ifPresent( u -> this.properties.setProperty( "user", u ) );
+//        username.ifPresent( u -> this.properties.setProperty( "user", u ) );
+        username.ifPresent( u -> this.properties.setProperty( "username", u ) );
         password.ifPresent( p -> this.properties.setProperty( PASSWORD, p ) );
 
     }
@@ -137,3 +138,4 @@ public class LaunchpadDestination {
     }
 
 }
+
