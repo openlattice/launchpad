@@ -105,7 +105,7 @@ class IntegrationRunner {
                 integration: Integration
         ) {
 
-
+            logStarted(integrationName, destination, integration)
             try {
                 ds.write()
                         .option("batchsize", destination.batchSize.toLong())
@@ -123,14 +123,18 @@ class IntegrationRunner {
         }
 
         private fun logStarted(integrationName: String, destination: LaunchpadDestination, integration: Integration) {
-            destination.hikariDatasource.connection.use { connection ->
-                connection.prepareStatement(IntegrationTables.LOG_INTEGRATION_STARTED).use { ps ->
-                    ps.setString(1, integrationName)
-                    ps.setString(2, hostName)
-                    ps.setString(3, integration.destination)
-                    ps.setObject(4, System.currentTimeMillis())
-                    ps.executeUpdate()
+            try {
+                destination.hikariDatasource.connection.use { connection ->
+                    connection.prepareStatement(IntegrationTables.LOG_INTEGRATION_STARTED).use { ps ->
+                        ps.setString(1, integrationName)
+                        ps.setString(2, hostName)
+                        ps.setString(3, integration.destination)
+                        ps.setObject(4, System.currentTimeMillis())
+                        ps.executeUpdate()
+                    }
                 }
+            } catch (ex: Exception) {
+                logger.warn("Unable to create activity entry in the database. Continuing data transfer...", ex)
             }
         }
 
