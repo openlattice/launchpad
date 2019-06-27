@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.datatype.guava.GuavaModule
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.google.common.base.Preconditions
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
 import com.openlattice.launchpad.configuration.IntegrationRunner
@@ -31,15 +32,16 @@ class LaunchPad {
 
             val integrationConfiguration = mapper.readValue( integrationFile, IntegrationConfiguration::class.java )
 
-            IntegrationRunner.runIntegrations( integrationConfiguration );
+            IntegrationRunner.runIntegrations( integrationConfiguration )
         }
 
         private fun createYamlMapper() : ObjectMapper {
-            val yamlMapper = ObjectMapper( YAMLFactory() );
-            yamlMapper.registerModule( Jdk8Module() );
-            yamlMapper.registerModule( GuavaModule() );
-            yamlMapper.registerModule( AfterburnerModule() );
-            return yamlMapper;
+            val yamlMapper = ObjectMapper( YAMLFactory() )
+            yamlMapper.registerModule( KotlinModule() )
+            yamlMapper.registerModule( Jdk8Module() )
+            yamlMapper.registerModule( GuavaModule() )
+            yamlMapper.registerModule( AfterburnerModule() )
+            return yamlMapper
         }
     }
 }
