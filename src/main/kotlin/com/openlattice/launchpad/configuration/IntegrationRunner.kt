@@ -105,6 +105,10 @@ class IntegrationRunner {
             }
         }
 
+        @SuppressFBWarnings(
+                value = ["DM_EXIT"],
+                justification = "Intentionally shutting down JVM on terminal error"
+        )
         @JvmStatic
         private fun toDatabase(
                 integrationName: String,
@@ -135,6 +139,7 @@ class IntegrationRunner {
                         integration.destination,
                         ex
                 )
+
                 kotlin.system.exitProcess(1)
             }
         }
@@ -146,17 +151,34 @@ class IntegrationRunner {
                 start: OffsetDateTime
         ) {
             try {
-                destination.hikariDatasource.connection.use { connection ->
-                    connection.prepareStatement(IntegrationTables.LOG_INTEGRATION_STARTED).use { ps ->
-                        ps.setString(1, integrationName)
-                        ps.setString(2, hostName)
-                        ps.setString(3, integration.destination)
-                        ps.setObject(4, start)
-                        ps.executeUpdate()
-                    }
-                }
+                unsafeExecuteSql(
+                        IntegrationTables.LOG_INTEGRATION_STARTED,
+                        integrationName,
+                        destination,
+                        integration,
+                        start
+                )
             } catch (ex: Exception) {
                 logger.warn("Unable to create activity entry in the database. Continuing data transfer...", ex)
+            }
+        }
+
+        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doens't like kotlin")
+        private fun unsafeExecuteSql(
+                sql: String,
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration,
+                start: OffsetDateTime
+        ) {
+            destination.hikariDatasource.connection.use { connection ->
+                connection.prepareStatement(sql).use { ps ->
+                    ps.setString(1, integrationName)
+                    ps.setString(2, hostName)
+                    ps.setString(3, integration.destination)
+                    ps.setObject(4, start)
+                    ps.executeUpdate()
+                }
             }
         }
 
@@ -167,15 +189,13 @@ class IntegrationRunner {
                 start: OffsetDateTime
         ) {
             try {
-                destination.hikariDatasource.connection.use { connection ->
-                    connection.prepareStatement(IntegrationTables.LOG_SUCCESSFUL_INTEGRATION).use { ps ->
-                        ps.setString(1, integrationName)
-                        ps.setString(2, hostName)
-                        ps.setString(3, integration.destination)
-                        ps.setObject(4, start)
-                        ps.executeUpdate()
-                    }
-                }
+                unsafeExecuteSql(
+                        IntegrationTables.LOG_SUCCESSFUL_INTEGRATION,
+                        integrationName,
+                        destination,
+                        integration,
+                        start
+                )
             } catch (ex: Exception) {
                 logger.warn("Unable to log success to database. Continuing data transfer...", ex)
             }
@@ -188,15 +208,13 @@ class IntegrationRunner {
                 start: OffsetDateTime
         ) {
             try {
-                destination.hikariDatasource.connection.use { connection ->
-                    connection.prepareStatement(IntegrationTables.LOG_FAILED_INTEGRATION).use { ps ->
-                        ps.setString(1, integrationName)
-                        ps.setString(2, hostName)
-                        ps.setString(3, integration.destination)
-                        ps.setObject(4, start)
-                        ps.executeUpdate()
-                    }
-                }
+                unsafeExecuteSql(
+                        IntegrationTables.LOG_FAILED_INTEGRATION,
+                        integrationName,
+                        destination,
+                        integration,
+                        start
+                )
             } catch (ex: Exception) {
                 logger.warn("Unable to log failure to database. Terminating", ex)
             }
