@@ -122,7 +122,7 @@ dependencies {
     compile "commons-cli:commons-cli:$commons_cli_version"
 
     compile "com.zaxxer:HikariCP:${hikariCP_version}"
-    compile "com.microsoft.sqlserver:mssql-jdbc:${mssql_jdbc_version}"
+    compile "com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8"
     compile "org.postgresql:postgresql:${postgresql_version}"
     compile fileTree(dir: 'lib/', include: '*.jar')
 
