@@ -73,9 +73,9 @@ public class LaunchpadDestination {
         this.properties = properties.orElse( new Properties() );
 
         this.properties.put(JDBC_URL, writeUrl);
-        this.properties.put(MAXIMUM_POOL_SIZE, 1);
-        this.properties.put(CONNECTION_TIMEOUT, 120000); //2-minute connection timeout
-//        username.ifPresent( u -> this.properties.setProperty( "user", u ) );
+        this.properties.put(MAXIMUM_POOL_SIZE, "1");
+        this.properties.put(CONNECTION_TIMEOUT, "120000"); //2-minute connection timeout
+        username.ifPresent( u -> this.properties.setProperty( "user", u ) );
         username.ifPresent( u -> this.properties.setProperty( "username", u ) );
         password.ifPresent( p -> this.properties.setProperty( PASSWORD, p ) );
 
@@ -123,7 +123,10 @@ public class LaunchpadDestination {
 
     @JsonIgnore
     public HikariDataSource getHikariDatasource() {
-        HikariConfig hc = new HikariConfig( properties );
+        final Properties pClone = (Properties) properties.clone();
+        pClone.setProperty( "username",pClone.getProperty( "user" )  );
+        pClone.remove( "user" );
+        HikariConfig hc = new HikariConfig( pClone );
         logger.info( "JDBC URL = {}", hc.getJdbcUrl() );
         return new HikariDataSource( hc );
     }

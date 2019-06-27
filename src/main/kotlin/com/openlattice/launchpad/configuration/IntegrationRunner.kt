@@ -128,6 +128,14 @@ class IntegrationRunner {
                 logSuccessful(integrationName, destination, integration, start)
             } catch (ex: Exception) {
                 logFailed(integrationName, destination, integration, start)
+                logger.error(
+                        "Integration {} failed going from {} to {}. Exiting.",
+                        integrationName,
+                        integration.source,
+                        integration.destination,
+                        ex
+                )
+                kotlin.system.exitProcess(1)
             }
         }
 
