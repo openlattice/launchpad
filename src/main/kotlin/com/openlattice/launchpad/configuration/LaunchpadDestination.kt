@@ -31,6 +31,11 @@ import org.slf4j.LoggerFactory
 import java.util.*
 
 private const val DEFAULT_BATCH_SIZE = 20000
+private const val DEFAULT_MAX_POOL_SIZE = 1
+private const val DEFAULT_CONNECTION_TIMEOUT = 120000
+
+private const val USERNAME_STRING = "username"
+private const val USER_STRING = "user"
 private val logger = LoggerFactory.getLogger(LaunchpadDestination::class.java)
 
 /**
@@ -47,14 +52,22 @@ data class LaunchpadDestination(
 
     init {
         Preconditions.checkState(name.isEmpty(), "Name must be specified for a desintation.")
-        username.ifPresent { u -> this.properties.setProperty("user", u) }
+        this.properties[JDBC_URL] = writeUrl;
+        this.properties[MAXIMUM_POOL_SIZE] = DEFAULT_MAX_POOL_SIZE.toString();
+        this.properties[CONNECTION_TIMEOUT] = DEFAULT_CONNECTION_TIMEOUT.toString(); //2-minute connection timeout
+        username.ifPresent { u -> this.properties.setProperty( USER_STRING, u) }
+        username.ifPresent { u -> this.properties.setProperty( USERNAME_STRING, u ) }
         password.ifPresent { p -> this.properties.setProperty(PASSWORD, p) }
     }
 
     val hikariDatasource: HikariDataSource
         @JsonIgnore
         get() {
-            val hc = HikariConfig(properties)
+
+            val pClone: Properties = properties.clone() as Properties
+            pClone.setProperty( USERNAME_STRING, pClone.getProperty( USER_STRING )  )
+            pClone.remove( USER_STRING)
+            val hc = HikariConfig( pClone )
             logger.info("JDBC URL = {}", hc.jdbcUrl)
             return HikariDataSource(hc)
         }

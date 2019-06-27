@@ -29,3 +29,7 @@ const val HEADER     = "header"
 const val CSV_DRIVER = "com.openlattice.launchpad.Csv"
 const val ORC_DRIVER = "orc"
 const val PARQUET_DRIVER = "parquet"
+
+const val JDBC_URL = "jdbcUrl"
+const val MAXIMUM_POOL_SIZE = "maximumPoolSize"
+const val CONNECTION_TIMEOUT = "connectionTimeout"
