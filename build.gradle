@@ -34,7 +34,7 @@ if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
 }
 
 if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
-    LP_ARGS = 'cassandra spark local'
+    LP_ARGS = 'spark local'
 }
 
 if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
