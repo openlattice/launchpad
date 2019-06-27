@@ -73,7 +73,7 @@ class IntegrationRunner {
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
 
-            integrations.forEach { datasourceName, destinationsForDatasource ->
+            integrations.forEach { (datasourceName, destinationsForDatasource) ->
                 val datasource = datasources.getValue(datasourceName)
 
                 Multimaps.asMap(destinationsForDatasource).forEach { destinationName, integrations ->
