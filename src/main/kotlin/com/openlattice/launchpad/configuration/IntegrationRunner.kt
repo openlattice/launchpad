@@ -118,11 +118,7 @@ class IntegrationRunner {
                         )
                 logSuccessful(integrationName, destination, integration)
             } catch (ex: Exception) {
-                destination.hikariDatasource.connection.use { connection ->
-                    connection.createStatement().use { stmt ->
-                        stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
-                    }
-                }
+                logFailed(integrationName, destination, integration)
             }
         }
 
@@ -133,6 +129,7 @@ class IntegrationRunner {
                     ps.setString(2, hostName)
                     ps.setString(3, integration.destination)
                     ps.setObject(4, System.currentTimeMillis())
+                    ps.executeUpdate()
                 }
             }
         }
@@ -149,6 +146,7 @@ class IntegrationRunner {
                         ps.setString(2, hostName)
                         ps.setString(3, integration.destination)
                         ps.setObject(4, System.currentTimeMillis())
+                        ps.executeUpdate()
                     }
                 }
             } catch (ex: Exception) {
@@ -168,6 +166,7 @@ class IntegrationRunner {
                         ps.setString(2, hostName)
                         ps.setString(3, integration.destination)
                         ps.setObject(4, System.currentTimeMillis())
+                        ps.executeUpdate()
                     }
                 }
             } catch (ex: Exception) {
