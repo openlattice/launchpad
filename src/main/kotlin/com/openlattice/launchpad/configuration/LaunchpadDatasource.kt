@@ -14,8 +14,9 @@ data class LaunchpadDatasource(
         @JsonProperty(USER) val user: String = "",
         @JsonProperty(PASSWORD) val password: String = "",
         @JsonProperty(FETCH_SIZE) val fetchSize: Int = DEFAULT_FETCH_SIZE,
-        @JsonProperty(HEADER) val header: Boolean = false,
-        val properties: Properties = Properties()) {
+        @JsonProperty(HEADER) val header: Boolean = false ) {
+
+    val properties: Properties = Properties()
 
     init {
         if ( driver != CSV_DRIVER && user.isEmpty() ){
