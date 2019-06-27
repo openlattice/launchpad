@@ -36,6 +36,10 @@ import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.Exception
+import java.net.InetAddress
+import java.time.OffsetDateTime
+import java.util.*
 
 /**
  *
@@ -48,6 +52,19 @@ class IntegrationRunner {
                 .master("local[${Runtime.getRuntime().availableProcessors()}]")
                 .appName("integration")
                 .orCreate
+        private val hostName = try {
+            val localhost = InetAddress.getLocalHost()
+            if (localhost.hostName.isBlank()) {
+                localhost.hostAddress
+            } else {
+                localhost.hostName
+            }
+        } catch (ex: Exception) {
+            val id = UUID.randomUUID()
+            logger.warn("Unable to get host for this machine. Using to random id: $id")
+            id.toString()
+        }
+
 
         @VisibleForTesting
         @JvmStatic
@@ -56,11 +73,18 @@ class IntegrationRunner {
             val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
+            destinations.forEach { (_, destination) ->
+                destination.hikariDatasource.connection.use { conn ->
+                    conn.createStatement().use { stmt ->
+                        stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
+                    }
+                }
+            }
 
-            integrations.forEach { datasourceName, destinationsForDatasource ->
+            integrations.forEach { (datasourceName, destinationsForDatasource) ->
                 val datasource = datasources.getValue(datasourceName)
 
-                Multimaps.asMap(destinationsForDatasource).forEach { destinationName, integrations ->
+                Multimaps.asMap(destinationsForDatasource).forEach { (destinationName, integrations) ->
                     integrations.forEach { integration ->
                         val destination = destinations.getValue(destinationName)
 
@@ -73,19 +97,126 @@ class IntegrationRunner {
                             CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
                             "parquet" -> ds.write().parquet(destination.writeUrl)
                             "orc" -> ds.write().orc(destination.writeUrl)
-                            else -> ds.write()
-                                    .option("batchsize", destination.batchSize.toLong())
-                                    .option("driver", destination.writeDriver)
-                                    .mode(SaveMode.Overwrite)
-                                    .jdbc(
-                                            destination.writeUrl,
-                                            integration.destination,
-                                            destination.properties
-                                    )
+                            else -> toDatabase(integrationConfiguration.name, ds, destination, integration)
                         }
                         logger.info("Wrote to name: {}", destination)
                     }
                 }
+            }
+        }
+
+        @SuppressFBWarnings(
+                value = ["DM_EXIT"],
+                justification = "Intentionally shutting down JVM on terminal error"
+        )
+        @JvmStatic
+        private fun toDatabase(
+                integrationName: String,
+                ds: Dataset<Row>,
+                destination: LaunchpadDestination,
+                integration: Integration
+        ) {
+
+            val start = OffsetDateTime.now()
+            logStarted(integrationName, destination, integration, start)
+            try {
+                ds.write()
+                        .option("batchsize", destination.batchSize.toLong())
+                        .option("driver", destination.writeDriver)
+                        .mode(SaveMode.Overwrite)
+                        .jdbc(
+                                destination.writeUrl,
+                                integration.destination,
+                                destination.properties
+                        )
+                logSuccessful(integrationName, destination, integration, start)
+            } catch (ex: Exception) {
+                logFailed(integrationName, destination, integration, start)
+                logger.error(
+                        "Integration {} failed going from {} to {}. Exiting.",
+                        integrationName,
+                        integration.source,
+                        integration.destination,
+                        ex
+                )
+
+                kotlin.system.exitProcess(1)
+            }
+        }
+
+        private fun logStarted(
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration,
+                start: OffsetDateTime
+        ) {
+            try {
+                unsafeExecuteSql(
+                        IntegrationTables.LOG_INTEGRATION_STARTED,
+                        integrationName,
+                        destination,
+                        integration,
+                        start
+                )
+            } catch (ex: Exception) {
+                logger.warn("Unable to create activity entry in the database. Continuing data transfer...", ex)
+            }
+        }
+
+        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doens't like kotlin")
+        private fun unsafeExecuteSql(
+                sql: String,
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration,
+                start: OffsetDateTime
+        ) {
+            destination.hikariDatasource.connection.use { connection ->
+                connection.prepareStatement(sql).use { ps ->
+                    ps.setString(1, integrationName)
+                    ps.setString(2, hostName)
+                    ps.setString(3, integration.destination)
+                    ps.setObject(4, start)
+                    ps.executeUpdate()
+                }
+            }
+        }
+
+        private fun logSuccessful(
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration,
+                start: OffsetDateTime
+        ) {
+            try {
+                unsafeExecuteSql(
+                        IntegrationTables.LOG_SUCCESSFUL_INTEGRATION,
+                        integrationName,
+                        destination,
+                        integration,
+                        start
+                )
+            } catch (ex: Exception) {
+                logger.warn("Unable to log success to database. Continuing data transfer...", ex)
+            }
+        }
+
+        private fun logFailed(
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration,
+                start: OffsetDateTime
+        ) {
+            try {
+                unsafeExecuteSql(
+                        IntegrationTables.LOG_FAILED_INTEGRATION,
+                        integrationName,
+                        destination,
+                        integration,
+                        start
+                )
+            } catch (ex: Exception) {
+                logger.warn("Unable to log failure to database. Terminating", ex)
             }
         }
 
@@ -109,5 +240,7 @@ class IntegrationRunner {
                         .load()
             }
         }
+
+
     }
 }
