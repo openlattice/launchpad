@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule
 import com.google.common.base.Preconditions
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
 import com.openlattice.launchpad.configuration.IntegrationRunner
+import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
 import java.io.File
 
@@ -23,9 +24,10 @@ class LaunchPad {
 
             Preconditions.checkArgument( cli.hasOption( LaunchPadCli.FILE ), "Integration file must be specified!" );
 
+
             val integrationFilePath = cli.getOptionValue( LaunchPadCli.FILE )
             Preconditions.checkState(  integrationFilePath.isNullOrEmpty() )
-            val integrationFile = File( integrationFilePath )
+            val integrationFile = File( FilenameUtils.getName( integrationFilePath  ) )
 
             val integrationConfiguration = mapper.readValue( integrationFile, IntegrationConfiguration::class.java )
 
