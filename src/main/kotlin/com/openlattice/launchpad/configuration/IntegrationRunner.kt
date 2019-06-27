@@ -36,6 +36,9 @@ import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.Exception
+import java.net.InetAddress
+import java.util.*
 
 /**
  *
@@ -48,6 +51,19 @@ class IntegrationRunner {
                 .master("local[${Runtime.getRuntime().availableProcessors()}]")
                 .appName("integration")
                 .orCreate
+        private val hostName = try {
+            val localhost = InetAddress.getLocalHost()
+            if (localhost.hostName.isBlank()) {
+                localhost.hostAddress
+            } else {
+                localhost.hostName
+            }
+        } catch (ex: Exception) {
+            val id = UUID.randomUUID()
+            logger.warn("Unable to get host for this machine. Using to random id: $id")
+            id.toString()
+        }
+
 
         @VisibleForTesting
         @JvmStatic
@@ -73,19 +89,89 @@ class IntegrationRunner {
                             CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
                             "parquet" -> ds.write().parquet(destination.writeUrl)
                             "orc" -> ds.write().orc(destination.writeUrl)
-                            else -> ds.write()
-                                    .option("batchsize", destination.batchSize.toLong())
-                                    .option("driver", destination.writeDriver)
-                                    .mode(SaveMode.Overwrite)
-                                    .jdbc(
-                                            destination.writeUrl,
-                                            integration.destination,
-                                            destination.properties
-                                    )
+                            else -> toDatabase(integrationConfiguration.name, ds, destination, integration)
                         }
                         logger.info("Wrote to name: {}", destination)
                     }
                 }
+            }
+        }
+
+        @JvmStatic
+        private fun toDatabase(
+                integrationName: String,
+                ds: Dataset<Row>,
+                destination: LaunchpadDestination,
+                integration: Integration
+        ) {
+
+
+            try {
+                ds.write()
+                        .option("batchsize", destination.batchSize.toLong())
+                        .option("driver", destination.writeDriver)
+                        .mode(SaveMode.Overwrite)
+                        .jdbc(
+                                destination.writeUrl,
+                                integration.destination,
+                                destination.properties
+                        )
+                logSuccessful(integrationName, destination, integration)
+            } catch (ex: Exception) {
+                destination.hikariDatasource.connection.use { connection ->
+                    connection.createStatement().use { stmt ->
+                        stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
+                    }
+                }
+            }
+        }
+
+        private fun logStarted(integrationName: String, destination: LaunchpadDestination, integration: Integration) {
+            destination.hikariDatasource.connection.use { connection ->
+                connection.prepareStatement(IntegrationTables.LOG_INTEGRATION_STARTED).use { ps ->
+                    ps.setString(1, integrationName)
+                    ps.setString(2, hostName)
+                    ps.setString(3, integration.destination)
+                    ps.setObject(4, System.currentTimeMillis())
+                }
+            }
+        }
+
+        private fun logSuccessful(
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration
+        ) {
+            try {
+                destination.hikariDatasource.connection.use { connection ->
+                    connection.prepareStatement(IntegrationTables.LOG_SUCCESSFUL_INTEGRATION).use { ps ->
+                        ps.setString(1, integrationName)
+                        ps.setString(2, hostName)
+                        ps.setString(3, integration.destination)
+                        ps.setObject(4, System.currentTimeMillis())
+                    }
+                }
+            } catch (ex: Exception) {
+                logger.warn("Unable to log success to database. Continuing data transfer...", ex)
+            }
+        }
+
+        private fun logFailed(
+                integrationName: String,
+                destination: LaunchpadDestination,
+                integration: Integration
+        ) {
+            try {
+                destination.hikariDatasource.connection.use { connection ->
+                    connection.prepareStatement(IntegrationTables.LOG_FAILED_INTEGRATION).use { ps ->
+                        ps.setString(1, integrationName)
+                        ps.setString(2, hostName)
+                        ps.setString(3, integration.destination)
+                        ps.setObject(4, System.currentTimeMillis())
+                    }
+                }
+            } catch (ex: Exception) {
+                logger.warn("Unable to log failure to database. Terminating", ex)
             }
         }
 
@@ -109,5 +195,7 @@ class IntegrationRunner {
                         .load()
             }
         }
+
+
     }
 }

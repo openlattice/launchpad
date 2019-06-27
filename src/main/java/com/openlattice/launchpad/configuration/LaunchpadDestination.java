@@ -38,6 +38,9 @@ import org.slf4j.LoggerFactory;
  */
 public class LaunchpadDestination {
     private static final String NAME         = "name";
+    private static final String JDBC_URL ="jdbcUrl";
+    private static final String MAXIMUM_POOL_SIZE = "maximumPoolSize";
+    private static final String CONNECTION_TIMEOUT = "connectionTimeout";
     private static final String WRITE_URL    = "url";
     private static final String WRITE_DRIVER = "driver";
     private static final String USER         = "username";
@@ -68,8 +71,13 @@ public class LaunchpadDestination {
         this.writeDriver = writeDriver;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
         this.properties = properties.orElse( new Properties() );
+
+        this.properties.put(JDBC_URL, writeUrl);
+        this.properties.put(MAXIMUM_POOL_SIZE, 1);
+        this.properties.put(CONNECTION_TIMEOUT, 120000); //2-minute connection timeout
         username.ifPresent( u -> this.properties.setProperty( "user", u ) );
         password.ifPresent( p -> this.properties.setProperty( PASSWORD, p ) );
+
     }
 
     @JsonProperty( WRITE_DRIVER )
