@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018. OpenLattice, Inc.
+ * Copyright (C) 2019. OpenLattice, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,22 +19,19 @@
  *
  */
 
-package com.openlattice.launchpad.configuration
+package com.openlattice.launchpad.postgres
 
-import com.fasterxml.jackson.annotation.JsonProperty
-import java.util.*
+import com.google.common.base.Stopwatch
+import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
-/**
- *
- * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
- */
-const val SOURCE = "source"
-const val DESTINATION = "destination"
+private val logger = LoggerFactory.getLogger(StopWatch::class.java)
 
+class StopWatch(val log : String) : AutoCloseable {
+    override fun close() {
+        logger.info("$log took ${sw.elapsed(TimeUnit.MILLISECONDS)} ms.")
+    }
 
-data class Integration(
-        @JsonProperty(DESCRIPTION) val description : String = "",
-        @JsonProperty(SOURCE) val source: String,
-        @JsonProperty(DESTINATION) val destination: String,
-        @JsonProperty("gluttony") val gluttony : Boolean = false
-)
+    private val sw = Stopwatch.createStarted()
+
+}
