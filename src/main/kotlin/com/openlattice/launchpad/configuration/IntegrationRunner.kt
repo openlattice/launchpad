@@ -61,7 +61,10 @@ class IntegrationRunner {
             id.toString()
         }
 
-
+        @SuppressFBWarnings(
+                value = ["DM_EXIT"],
+                justification = "Intentionally shutting down JVM on terminal error"
+        )
         @VisibleForTesting
         @JvmStatic
         fun runIntegrations(integrationConfiguration: IntegrationConfiguration) {
