@@ -147,7 +147,6 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-
             try {
                 ds.write()
                         .option("batchsize", destination.batchSize.toLong())
