@@ -82,7 +82,7 @@ class IntegrationRunner {
 
                 Multimaps.asMap(destinationsForDatasource).forEach { (destinationName, integrations) ->
                     )
-                    val extIntegrations = integrations + integrations
+                    val extIntegrations = integrations.filter { !it.gluttony } + integrations
                             .filter { it.gluttony }
                             .flatMap { integration ->
 
