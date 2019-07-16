@@ -61,8 +61,8 @@ public class LaunchpadDatasource {
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize,
             @JsonProperty( HEADER ) Optional<Boolean> header ) {
-//        checkState( header.map( hasHeader -> hasHeader && CSV_DRIVER.equals( driver ) ).orElse( true ),
-//                "header can only be set for csv" );
+        checkState( header.map( hasHeader -> hasHeader && CSV_DRIVER.equals( driver ) ).orElse( true ),
+                "header can only be set for csv" );
         this.name = name;
         this.url = url;
         this.driver = driver;
