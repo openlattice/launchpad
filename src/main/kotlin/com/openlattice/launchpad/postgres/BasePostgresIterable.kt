@@ -97,7 +97,7 @@ open class StatementHolderSupplier(
             }
         } catch (ex: Exception) {
             logger.error("Error while executing sql: {}. The following exception was thrown: ", sql, ex)
-            if ( !connection.autoCommit ){
+            if (!connection.autoCommit) {
                 connection.rollback()
                 logger.error("Rolled back the offending commit ")
             }
@@ -199,11 +199,13 @@ class PostgresIterator<T> @Throws(SQLException::class)
             notExhausted = false
             throw NoSuchElementException("Unable to retrieve next element from result set.")
         } finally {
-            if (!notExhausted) {
-                rsh.close()
+            try {
+                if (!notExhausted) {
+                    rsh.close()
+                }
+            } finally {
+                lock.unlock()
             }
-
-            lock.unlock()
         }
 
         return nextElem
