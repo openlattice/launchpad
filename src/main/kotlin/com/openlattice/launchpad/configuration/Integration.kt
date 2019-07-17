@@ -31,5 +31,5 @@ data class Integration(
         @JsonProperty(DESCRIPTION) val description : String = "",
         @JsonProperty(SOURCE) val source: String,
         @JsonProperty(DESTINATION) val destination: String,
-        @JsonProperty("gluttony") val gluttony : Boolean = false
+        @JsonProperty(GLUTTONY) val gluttony : Boolean = false
 )

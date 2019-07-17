@@ -20,6 +20,7 @@ const val DATASOURCES = "datasources"
 const val DESTINATIONS = "destinations"
 const val DESCRIPTION = "description"
 const val INTEGRATIONS = "integrations"
+const val GLUTTONY = "gluttony"
 
 const val DESTINATION_TABLE = "table"
 
