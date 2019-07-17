@@ -1,11 +1,9 @@
 package com.openlattice.launchpad.configuration
 
+import avro.shaded.com.google.common.base.Preconditions.checkState
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.logging.log4j.core.tools.picocli.CommandLine
 import java.util.*
-
-private const val DEFAULT_FETCH_SIZE = 20000
-
 
 data class LaunchpadDatasource(
         @JsonProperty(NAME) val name: String,
@@ -19,8 +17,13 @@ data class LaunchpadDatasource(
     val properties: Properties = Properties()
 
     init {
-        if ( driver != CSV_DRIVER && user.isEmpty() ){
-            throw CommandLine.MissingParameterException("A username must be specified for database connections.")
+        if ( driver != CSV_DRIVER ) {
+            if ( header ) {
+                throw Exception("Header can only be set for csv")
+            }
+            if ( user.isEmpty() ) {
+                throw CommandLine.MissingParameterException("A username must be specified for database connections.")
+            }
         }
         properties.setProperty( "user", user );
         properties.setProperty( "password", password );
