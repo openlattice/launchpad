@@ -1,5 +1,7 @@
 package com.openlattice.launchpad.configuration
 
+const val DEFAULT_FETCH_SIZE = 20_000
+
 const val NAME = "name"
 const val QUERY = "query"
 
