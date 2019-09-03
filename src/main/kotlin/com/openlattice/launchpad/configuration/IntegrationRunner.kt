@@ -32,6 +32,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.lang.Exception
 import java.net.InetAddress
 import java.time.OffsetDateTime
@@ -110,7 +112,7 @@ class IntegrationRunner {
                             logger.info("Transferring ${datasource.name} with query ${integration.source}")
                             getSourceDataset(datasource, integration)
                         } catch (ex: Exception) {
-                            logFailed(datasourceName, destination, integration, start)
+                            logFailed(datasourceName, destination, integration, start, ex)
                             logger.error(
                                     "Integration {} failed going from {} to {}. Exiting.",
                                     integrationConfiguration.name,
@@ -159,7 +161,7 @@ class IntegrationRunner {
                         )
                 logSuccessful(integrationName, destination, integration, start)
             } catch (ex: Exception) {
-                logFailed(integrationName, destination, integration, start)
+                logFailed(integrationName, destination, integration, start, ex)
                 logger.error(
                         "Integration {} failed going from {} to {}. Exiting.",
                         integrationName,
@@ -233,16 +235,23 @@ class IntegrationRunner {
                 integrationName: String,
                 destination: LaunchpadDestination,
                 integration: Integration,
-                start: OffsetDateTime
+                start: OffsetDateTime,
+                exception: Exception
         ) {
+            val sw = StringWriter()
+            exception.printStackTrace( PrintWriter( sw ))
+            val exAsString = sw.toString()
             try {
-                unsafeExecuteSql(
-                        IntegrationTables.LOG_FAILED_INTEGRATION,
-                        integrationName,
-                        destination,
-                        integration,
-                        start
-                )
+                destination.hikariDatasource.connection.use { connection ->
+                    connection.prepareStatement(IntegrationTables.LOG_FAILED_INTEGRATION).use { ps ->
+                        ps.setString(1, exAsString )
+                        ps.setString(2, integrationName)
+                        ps.setString(3, hostName)
+                        ps.setString(4, integration.destination)
+                        ps.setObject(5, start)
+                        ps.executeUpdate()
+                    }
+                }
             } catch (ex: Exception) {
                 logger.warn("Unable to log failure to database. Terminating", ex)
             }
