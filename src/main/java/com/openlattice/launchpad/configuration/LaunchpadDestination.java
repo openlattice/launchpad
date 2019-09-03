@@ -59,13 +59,13 @@ public class LaunchpadDestination {
     private final String     writeDriver;
     private final Properties properties;
     private final int        batchSize;
-    private final SaveMode   writeMode;
+    private final SaveMode     writeMode;
 
     public LaunchpadDestination(
             @JsonProperty( NAME ) String name,
             @JsonProperty( WRITE_URL ) String writeUrl,
             @JsonProperty( WRITE_DRIVER ) String writeDriver,
-            @JsonProperty( WRITE_MODE ) Optional<String> mode,
+            @JsonProperty( WRITE_MODE ) Optional<String> writeMode,
             @JsonProperty( USER ) Optional<String> username,
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( PROPERTIES ) Optional<Properties> properties,
@@ -76,7 +76,7 @@ public class LaunchpadDestination {
         this.writeDriver = writeDriver;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
         this.properties = properties.orElse( new Properties() );
-        this.writeMode = SaveMode.valueOf( mode.orElse( DEFAULT_WRITE_MODE.name() ) );
+        this.writeMode = SaveMode.valueOf( writeMode.orElse( DEFAULT_WRITE_MODE.name()));
 
         this.properties.put(JDBC_URL, writeUrl);
         this.properties.put(MAXIMUM_POOL_SIZE, "1");
@@ -146,6 +146,7 @@ public class LaunchpadDestination {
         return "LaunchpadDestination{" +
                 "writeUrl='" + writeUrl + '\'' +
                 ", writeDriver='" + writeDriver + '\'' +
+                ", writeMode='" + writeMode + '\'' +
                 ", properties=" + properties +
                 ", batchSize=" + batchSize +
                 '}';
