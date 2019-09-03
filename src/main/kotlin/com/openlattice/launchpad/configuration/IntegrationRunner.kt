@@ -147,7 +147,6 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            SaveMode.Overwrite
             try {
                 ds.write()
                         .option("batchsize", destination.batchSize.toLong())
