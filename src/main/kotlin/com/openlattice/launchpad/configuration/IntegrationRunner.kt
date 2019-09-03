@@ -192,7 +192,7 @@ class IntegrationRunner {
             }
         }
 
-        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doens't like kotlin")
+        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doesn't like kotlin")
         private fun unsafeExecuteSql(
                 sql: String,
                 integrationName: String,
