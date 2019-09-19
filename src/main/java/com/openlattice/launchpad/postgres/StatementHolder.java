@@ -98,7 +98,7 @@ public class StatementHolder implements Closeable {
             otherResultSets.forEach( this::safeTryClose );
             otherStatements.forEach( this::safeTryClose );
 
-            final var elapsed = sw.elapsed( TimeUnit.MILLISECONDS );
+            final long elapsed = sw.elapsed( TimeUnit.MILLISECONDS );
             if ( elapsed > this.longRunningQueryLimit ) {
                 logger.warn( "The following statement was involved in a long lived connection that took {} ms: {}",
                         elapsed,

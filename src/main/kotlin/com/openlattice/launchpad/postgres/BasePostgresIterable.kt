@@ -23,6 +23,7 @@ package com.openlattice.launchpad.postgres
 
 import com.google.common.base.Preconditions.checkState
 import com.zaxxer.hikari.HikariDataSource
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.IOException
@@ -74,6 +75,7 @@ open class StatementHolderSupplier(
 
     protected val logger = LoggerFactory.getLogger(javaClass)!!
 
+    @SuppressFBWarnings(value = ["SECSQLIJDBC"], justification = "Provided by caller.")
     open fun execute(statement: Statement): ResultSet {
         return statement.executeQuery(sql)
     }
@@ -97,7 +99,7 @@ open class StatementHolderSupplier(
             }
         } catch (ex: Exception) {
             logger.error("Error while executing sql: {}. The following exception was thrown: ", sql, ex)
-            if ( !connection.autoCommit ){
+            if (!connection.autoCommit) {
                 connection.rollback()
                 logger.error("Rolled back the offending commit ")
             }
@@ -126,6 +128,7 @@ class PreparedStatementHolderSupplier(
         return (ps as PreparedStatement).executeQuery()
     }
 
+    @SuppressFBWarnings(value = ["SECSQLIJDBC"], justification = "Provided by caller.")
     override fun buildStatement(connection: Connection): Statement {
         val ps = connection.prepareStatement(sql)
         bind(ps)
@@ -199,11 +202,13 @@ class PostgresIterator<T> @Throws(SQLException::class)
             notExhausted = false
             throw NoSuchElementException("Unable to retrieve next element from result set.")
         } finally {
-            if (!notExhausted) {
-                rsh.close()
+            try {
+                if (!notExhausted) {
+                    rsh.close()
+                }
+            } finally {
+                lock.unlock()
             }
-
-            lock.unlock()
         }
 
         return nextElem
