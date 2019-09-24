@@ -231,6 +231,7 @@ class IntegrationRunner {
             }
         }
 
+        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doens't like kotlin")
         private fun logFailed(
                 integrationName: String,
                 destination: LaunchpadDestination,

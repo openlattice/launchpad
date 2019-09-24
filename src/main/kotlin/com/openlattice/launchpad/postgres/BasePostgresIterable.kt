@@ -23,6 +23,7 @@ package com.openlattice.launchpad.postgres
 
 import com.google.common.base.Preconditions
 import com.zaxxer.hikari.HikariDataSource
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.IOException
@@ -72,6 +73,7 @@ open class StatementHolderSupplier(
 
     protected val logger = LoggerFactory.getLogger(javaClass)!!
 
+    @SuppressFBWarnings(value = ["SQL_INJECTION_JDBC"], justification = "Assumed that user sanitizes input")
     open fun execute(statement: Statement): ResultSet {
         return statement.executeQuery(sql)
     }
@@ -107,6 +109,7 @@ open class StatementHolderSupplier(
     }
 }
 
+@SuppressFBWarnings(value = ["SQL_INJECTION_JDBC"], justification = "Assumed that bind() sanitizes input")
 class PreparedStatementHolderSupplier(
         hds: HikariDataSource,
         sql: String,
@@ -162,7 +165,6 @@ class PostgresIterator<T> @Throws(SQLException::class)
                     } catch (e: InterruptedException) {
                         logger.error("Unable to sleep thread for {} millis", timeoutMillis, e)
                     }
-
                 }
             }
         }
@@ -192,11 +194,10 @@ class PostgresIterator<T> @Throws(SQLException::class)
             notExhausted = false
             throw NoSuchElementException("Unable to retrieve next element from result set.")
         } finally {
+            lock.unlock()
             if (!notExhausted) {
                 rsh.close()
             }
-
-            lock.unlock()
         }
 
         return nextElem
