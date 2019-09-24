@@ -21,9 +21,8 @@
 
 package com.openlattice.launchpad.postgres
 
-import com.google.common.base.Preconditions.checkState
+import com.google.common.base.Preconditions
 import com.zaxxer.hikari.HikariDataSource
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.IOException
@@ -32,7 +31,6 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
 import java.util.function.Supplier
-import java.util.stream.Stream
 
 /**
  *
@@ -43,7 +41,7 @@ class BasePostgresIterable<T>(
         private val mapper: (ResultSet) -> T
 ) : Iterable<T> {
 
-    private val logger = LoggerFactory.getLogger(BasePostgresIterable::class.java)
+    private val logger = LoggerFactory.getLogger(PostgresIterable::class.java)
 
     override fun iterator(): PostgresIterator<T> {
         try {
@@ -55,7 +53,6 @@ class BasePostgresIterable<T>(
             logger.error("Error creating postgres stream iterator.")
             throw IllegalStateException("Unable to instantiate postgres iterator.", e)
         }
-
     }
 }
 
@@ -63,19 +60,18 @@ open class StatementHolderSupplier(
         val hds: HikariDataSource,
         val sql: String,
         val fetchSize: Int = 0,
-        val autoCommit: Boolean = fetchSize > 0,
+        val autoCommit: Boolean = (fetchSize == 0),
         private val longRunningQueryLimit: Long = 0
 ) : Supplier<StatementHolder> {
     init {
         check(fetchSize >= 0) { "Fetch-size must be nonnegative." }
-        check(((autoCommit) && (fetchSize > 0)) || (fetchSize == 0)) {
-            "Auto-commit cannot be disabled if fetch size > 0."
+        check(((!autoCommit) && (fetchSize > 0)) || (fetchSize == 0)) {
+            "Auto-commit must be false if fetch size > 0."
         }
     }
 
     protected val logger = LoggerFactory.getLogger(javaClass)!!
 
-    @SuppressFBWarnings(value = ["SECSQLIJDBC"], justification = "Provided by caller.")
     open fun execute(statement: Statement): ResultSet {
         return statement.executeQuery(sql)
     }
@@ -86,7 +82,6 @@ open class StatementHolderSupplier(
 
     override fun get(): StatementHolder {
         val connection = hds.connection //okay to fail + propagate
-        val oldAutoCommit = connection.autoCommit
         connection.autoCommit = autoCommit
 
         val statement = buildStatement(connection) //okay to fail + propagate
@@ -94,18 +89,14 @@ open class StatementHolderSupplier(
         statement.fetchSize = fetchSize
 
         val rs = try {
-            StopWatch("Executing query $sql ").use {
-                execute(statement)
-            }
+            execute(statement)
         } catch (ex: Exception) {
             logger.error("Error while executing sql: {}. The following exception was thrown: ", sql, ex)
-            if (!connection.autoCommit) {
+            if ( !connection.autoCommit ){
                 connection.rollback()
                 logger.error("Rolled back the offending commit ")
             }
             throw ex
-        } finally {
-            connection.autoCommit = oldAutoCommit
         }
 
         return if (longRunningQueryLimit == 0L) {
@@ -120,7 +111,7 @@ class PreparedStatementHolderSupplier(
         hds: HikariDataSource,
         sql: String,
         fetchSize: Int = 0,
-        autoCommit: Boolean = fetchSize > 0,
+        autoCommit: Boolean = (fetchSize == 0),
         val bind: (PreparedStatement) -> Unit
 ) : StatementHolderSupplier(hds, sql, fetchSize, autoCommit) {
 
@@ -128,7 +119,6 @@ class PreparedStatementHolderSupplier(
         return (ps as PreparedStatement).executeQuery()
     }
 
-    @SuppressFBWarnings(value = ["SECSQLIJDBC"], justification = "Provided by caller.")
     override fun buildStatement(connection: Connection): Statement {
         val ps = connection.prepareStatement(sql)
         bind(ps)
@@ -194,7 +184,7 @@ class PostgresIterator<T> @Throws(SQLException::class)
         val nextElem: T
         try {
             lock.lock()
-            checkState(hasNext(), "There are no more items remaining in the stream.")
+            Preconditions.checkState(hasNext(), "There are no more items remaining in the stream.")
             nextElem = mapper(rs)
             notExhausted = rs.next()
         } catch (e: SQLException) {
@@ -202,13 +192,11 @@ class PostgresIterator<T> @Throws(SQLException::class)
             notExhausted = false
             throw NoSuchElementException("Unable to retrieve next element from result set.")
         } finally {
-            try {
-                if (!notExhausted) {
-                    rsh.close()
-                }
-            } finally {
-                lock.unlock()
+            if (!notExhausted) {
+                rsh.close()
             }
+
+            lock.unlock()
         }
 
         return nextElem
