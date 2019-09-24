@@ -41,7 +41,7 @@ class BasePostgresIterable<T>(
         private val mapper: (ResultSet) -> T
 ) : Iterable<T> {
 
-    private val logger = LoggerFactory.getLogger(PostgresIterable::class.java)
+    private val logger = LoggerFactory.getLogger(BasePostgresIterable::class.java)
 
     override fun iterator(): PostgresIterator<T> {
         try {
@@ -115,8 +115,8 @@ class PreparedStatementHolderSupplier(
         val bind: (PreparedStatement) -> Unit
 ) : StatementHolderSupplier(hds, sql, fetchSize, autoCommit) {
 
-    override fun execute(ps: Statement): ResultSet {
-        return (ps as PreparedStatement).executeQuery()
+    override fun execute(statement: Statement): ResultSet {
+        return (statement as PreparedStatement).executeQuery()
     }
 
     override fun buildStatement(connection: Connection): Statement {
