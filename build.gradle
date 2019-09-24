@@ -33,7 +33,7 @@ if (LAUNCHPAD_XMS == 'null' || LAUNCHPAD_XMS == null || LAUNCHPAD_XMS == "") {
 }
 
 if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
-    LAUNCHPAD_XMX = '-Xms4g'
+    LAUNCHPAD_XMX = '-Xmx4g'
 }
 
 if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
