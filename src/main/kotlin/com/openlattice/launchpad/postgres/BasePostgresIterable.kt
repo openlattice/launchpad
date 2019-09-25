@@ -23,6 +23,7 @@ package com.openlattice.launchpad.postgres
 
 import com.google.common.base.Preconditions
 import com.zaxxer.hikari.HikariDataSource
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.IOException
@@ -57,10 +58,10 @@ class BasePostgresIterable<T>(
 }
 
 open class StatementHolderSupplier(
-        val hds: HikariDataSource,
+        private val hds: HikariDataSource,
         val sql: String,
-        val fetchSize: Int = 0,
-        val autoCommit: Boolean = (fetchSize == 0),
+        private val fetchSize: Int = 0,
+        private val autoCommit: Boolean = (fetchSize == 0),
         private val longRunningQueryLimit: Long = 0
 ) : Supplier<StatementHolder> {
     init {
@@ -70,8 +71,9 @@ open class StatementHolderSupplier(
         }
     }
 
-    protected val logger = LoggerFactory.getLogger(javaClass)!!
+    private val logger = LoggerFactory.getLogger(javaClass)!!
 
+    @SuppressFBWarnings(value = ["SQL_INJECTION_JDBC"], justification = "Assumed that user sanitizes input")
     open fun execute(statement: Statement): ResultSet {
         return statement.executeQuery(sql)
     }
@@ -107,6 +109,8 @@ open class StatementHolderSupplier(
     }
 }
 
+@Suppress("UNUSED")
+@SuppressFBWarnings(value = ["SQL_INJECTION_JDBC"], justification = "Assumed that user sanitizes input")
 class PreparedStatementHolderSupplier(
         hds: HikariDataSource,
         sql: String,
@@ -115,8 +119,8 @@ class PreparedStatementHolderSupplier(
         val bind: (PreparedStatement) -> Unit
 ) : StatementHolderSupplier(hds, sql, fetchSize, autoCommit) {
 
-    override fun execute(ps: Statement): ResultSet {
-        return (ps as PreparedStatement).executeQuery()
+    override fun execute(statement: Statement): ResultSet {
+        return (statement as PreparedStatement).executeQuery()
     }
 
     override fun buildStatement(connection: Connection): Statement {
@@ -192,11 +196,13 @@ class PostgresIterator<T> @Throws(SQLException::class)
             notExhausted = false
             throw NoSuchElementException("Unable to retrieve next element from result set.")
         } finally {
-            if (!notExhausted) {
-                rsh.close()
+            try {
+                if (!notExhausted) {
+                    rsh.close()
+                }
+            } finally {
+                lock.unlock()
             }
-
-            lock.unlock()
         }
 
         return nextElem
