@@ -104,8 +104,7 @@ jar {
     }
 
 }
-ext.jv = jackson_version
-        //"2.8.11"
+
 dependencies {
     spotbugsPlugins "com.h3xstream.findsecbugs:findsecbugs-plugin:${findsecbugs_version}"
     compileOnly "net.jcip:jcip-annotations:${jcip_version}"
@@ -131,22 +130,24 @@ dependencies {
     compile fileTree(dir: 'lib/', include: '*.jar')
 
 
+    compile "com.google.guava:guava:${guava_version}"
+
     compile "org.apache.spark:spark-core_2.11:${spark_version}"
     compile "org.apache.spark:spark-sql_2.11:${spark_version}"
 
-    compile "com.fasterxml.jackson.core:jackson-core:${jv}"
-    compile "com.fasterxml.jackson.core:jackson-databind:${jv}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jv}"
-    compile "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${jv}"
-    compile "com.fasterxml.jackson.module:jackson-module-afterburner:${jv}"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${jv}"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jv}"
-    compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jv}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jv}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jv}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jv}"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jv}"
-    compile "com.fasterxml.jackson.module:jackson-module-scala_2.11:${jv}"
+    compile "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jackson_version}"
+    compile "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${jackson_version}"
+    compile "com.fasterxml.jackson.module:jackson-module-afterburner:${jackson_version}"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${jackson_version}"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson_version}"
+    compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson_version}"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}"
+    compile "com.fasterxml.jackson.module:jackson-module-scala_2.11:${jackson_version}"
     compile 'org.yaml:snakeyaml:${snakeyaml_version}'
 
     compile "org.ow2.asm:asm:${asm_version}"
