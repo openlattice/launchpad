@@ -151,7 +151,7 @@ class IntegrationRunner {
                 ds.write()
                         .option("batchsize", destination.batchSize.toLong())
                         .option("driver", destination.writeDriver)
-                        .mode(SaveMode.Overwrite)
+                        .mode( destination.writeMode )
                         .jdbc(
                                 destination.writeUrl,
                                 integration.destination,
@@ -191,7 +191,7 @@ class IntegrationRunner {
             }
         }
 
-        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doens't like kotlin")
+        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doesn't like kotlin")
         private fun unsafeExecuteSql(
                 sql: String,
                 integrationName: String,
