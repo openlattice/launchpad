@@ -21,9 +21,14 @@
 
 package com.openlattice.launchpad;
 
+import com.openlattice.launchpad.configuration.IntegrationConfiguration;
 import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
 import com.openlattice.launchpad.configuration.IntegrationRunner;
 import java.io.IOException;
+import java.util.List;
+
+import com.openlattice.launchpad.configuration.LaunchpadDestination;
+import org.apache.spark.sql.SaveMode;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -34,6 +39,17 @@ public class LaunchPadTests {
     @Test
     public void runIntegration() throws IOException {
         IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
+    }
+
+    @Test
+    public void runAppendOnlyIntegration() throws IOException {
+        IntegrationConfiguration integrationConfiguration = IntegrationConfigurationTests
+                .readAppendOnlyIntegrationConfiguration();
+        List<LaunchpadDestination> destinations = integrationConfiguration.getDestinations();
+        for ( LaunchpadDestination d : destinations ) {
+            System.out.println( d.getName() + ": "  + d.getWriteMode());
+        }
+        IntegrationRunner.runIntegrations( integrationConfiguration  );
     }
 
     @Test
