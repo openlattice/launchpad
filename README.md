@@ -5,4 +5,4 @@ Our configuration driven extract and load makes it easy to setup recurring data 
 
 
 ## Usage
-Detailed usage instructions avaiable [here](https://help.openlattice.com/guides/integrations-3/).
+Detailed usage instructions avaiable [here](https://help.openlattice.com/article/53-securely-transfer-data-to-openlattice-with-launchpad).
