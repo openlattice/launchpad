@@ -50,4 +50,9 @@ public class IntegrationConfigurationTests extends AbstractJacksonSerializationT
     public static IntegrationConfiguration readOracleIntegrationConfiguration() throws IOException {
         return yaml.readValue( Resources.getResource( "integrations_oracle.yaml" ), IntegrationConfiguration.class );
     }
+
+    public static IntegrationConfiguration readAppendOnlyIntegrationConfiguration() throws IOException {
+        return yaml.readValue( Resources.getResource( "appendIntegrations.yaml" ), IntegrationConfiguration.class );
+    }
+
 }

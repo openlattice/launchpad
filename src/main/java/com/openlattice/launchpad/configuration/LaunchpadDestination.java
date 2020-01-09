@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import org.apache.commons.lang.StringUtils;
+import org.apache.spark.sql.SaveMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,30 +38,34 @@ import org.slf4j.LoggerFactory;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchpadDestination {
-    private static final String NAME         = "name";
-    private static final String JDBC_URL ="jdbcUrl";
-    private static final String MAXIMUM_POOL_SIZE = "maximumPoolSize";
-    private static final String CONNECTION_TIMEOUT = "connectionTimeout";
-    private static final String WRITE_URL    = "url";
-    private static final String WRITE_DRIVER = "driver";
-    private static final String USER         = "username";
-    private static final String PASSWORD     = "password";
+    private static final String NAME                = "name";
+    private static final String JDBC_URL            ="jdbcUrl";
+    private static final String MAXIMUM_POOL_SIZE   = "maximumPoolSize";
+    private static final String CONNECTION_TIMEOUT  = "connectionTimeout";
+    private static final String WRITE_URL           = "url";
+    private static final String WRITE_DRIVER        = "driver";
+    private static final String WRITE_MODE          = "writeMode";
+    private static final String USER                = "username";
+    private static final String PASSWORD            = "password";
 
-    private static final String PROPERTIES         = "properties";
-    private static final String BATCH_SIZE         = "batchSize";
-    private static final int    DEFAULT_BATCH_SIZE = 20000;
-    private static final Logger logger             = LoggerFactory.getLogger( LaunchpadDestination.class );
+    private static final String   PROPERTIES         = "properties";
+    private static final String   BATCH_SIZE         = "batchSize";
+    private static final SaveMode DEFAULT_WRITE_MODE = SaveMode.Overwrite ;
+    private static final int      DEFAULT_BATCH_SIZE = 20000;
+    private static final Logger   logger             = LoggerFactory.getLogger( LaunchpadDestination.class );
 
     private final String     name;
     private final String     writeUrl;
     private final String     writeDriver;
     private final Properties properties;
     private final int        batchSize;
+    private final SaveMode     writeMode;
 
     public LaunchpadDestination(
             @JsonProperty( NAME ) String name,
             @JsonProperty( WRITE_URL ) String writeUrl,
             @JsonProperty( WRITE_DRIVER ) String writeDriver,
+            @JsonProperty( WRITE_MODE ) Optional<String> writeMode,
             @JsonProperty( USER ) Optional<String> username,
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( PROPERTIES ) Optional<Properties> properties,
@@ -71,6 +76,7 @@ public class LaunchpadDestination {
         this.writeDriver = writeDriver;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
         this.properties = properties.orElse( new Properties() );
+        this.writeMode = SaveMode.valueOf( writeMode.orElse( DEFAULT_WRITE_MODE.name()));
 
         this.properties.put(JDBC_URL, writeUrl);
         this.properties.put(MAXIMUM_POOL_SIZE, "1");
@@ -106,6 +112,11 @@ public class LaunchpadDestination {
         return name;
     }
 
+    @JsonProperty( WRITE_MODE )
+    public SaveMode getWriteMode() {
+        return writeMode;
+    }
+
     @Override public boolean equals( Object o ) {
         if ( this == o ) { return true; }
         if ( !( o instanceof LaunchpadDestination ) ) { return false; }
@@ -135,6 +146,7 @@ public class LaunchpadDestination {
         return "LaunchpadDestination{" +
                 "writeUrl='" + writeUrl + '\'' +
                 ", writeDriver='" + writeDriver + '\'' +
+                ", writeMode='" + writeMode + '\'' +
                 ", properties=" + properties +
                 ", batchSize=" + batchSize +
                 '}';
