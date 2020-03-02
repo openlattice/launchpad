@@ -22,7 +22,6 @@
 package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import java.util.*
 
 /**
  *
@@ -30,11 +29,16 @@ import java.util.*
  */
 const val SOURCE = "source"
 const val DESTINATION = "destination"
-
+const val ISOLATION_LEVEL = "transactionIsolationLevel"
 
 data class Integration(
         @JsonProperty(DESCRIPTION) val description : String = "",
         @JsonProperty(SOURCE) val source: String,
         @JsonProperty(DESTINATION) val destination: String,
+        @JsonProperty(ISOLATION_LEVEL) val isolationLevel: IsolationLevel,
         @JsonProperty("gluttony") val gluttony : Boolean = false
 )
+
+enum class IsolationLevel {
+    NONE, READ_COMMITTED, READ_UNCOMMITTED, REPEATABLE_READ, SERIALIZABLE
+}

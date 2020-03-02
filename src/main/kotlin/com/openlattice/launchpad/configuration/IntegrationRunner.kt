@@ -259,6 +259,7 @@ class IntegrationRunner {
                 else -> return sparkSession
                         .read()
                         .format("jdbc")
+                        .option("isolationLevel", integration.isolationLevel.name)
                         .option("url", datasource.url)
                         .option("dbtable", integration.source)
                         .option("user", datasource.user)
