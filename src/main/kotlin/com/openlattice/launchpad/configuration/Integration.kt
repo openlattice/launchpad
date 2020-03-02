@@ -35,7 +35,7 @@ data class Integration(
         @JsonProperty(DESCRIPTION) val description : String = "",
         @JsonProperty(SOURCE) val source: String,
         @JsonProperty(DESTINATION) val destination: String,
-        @JsonProperty(ISOLATION_LEVEL) val isolationLevel: IsolationLevel,
+        @JsonProperty(ISOLATION_LEVEL) val isolationLevel: IsolationLevel = IsolationLevel.READ_UNCOMMITTED,
         @JsonProperty("gluttony") val gluttony : Boolean = false
 )
 
