@@ -24,15 +24,18 @@ package com.openlattice.launchpad.configuration;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
+import com.openlattice.launchpad.LaunchPad;
+import com.openlattice.launchpad.LaunchPadCli;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.sql.SaveMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
@@ -81,6 +84,14 @@ public class LaunchpadDestination {
         this.properties.put(JDBC_URL, writeUrl);
         this.properties.put(MAXIMUM_POOL_SIZE, "1");
         this.properties.put(CONNECTION_TIMEOUT, "120000"); //2-minute connection timeout
+        if ( username.isEmpty() && LaunchPad.cl.hasOption( LaunchPadCli.OL_USERNAME ) ){
+            String user = LaunchPad.cl.getOptionValue( LaunchPadCli.OL_USERNAME );
+            this.properties.setProperty( "user", user );
+            this.properties.setProperty( "username",user );
+        }
+        if ( password.isEmpty() && LaunchPad.cl.hasOption( LaunchPadCli.OL_PASSWORD ) ){
+            this.properties.setProperty( PASSWORD, LaunchPad.cl.getOptionValue( LaunchPadCli.OL_PASSWORD ) );
+        }
         username.ifPresent( u -> this.properties.setProperty( "user", u ) );
         username.ifPresent( u -> this.properties.setProperty( "username", u ) );
         password.ifPresent( p -> this.properties.setProperty( PASSWORD, p ) );

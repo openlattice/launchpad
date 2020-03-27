@@ -29,6 +29,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+
+import com.openlattice.launchpad.LaunchPad;
+import com.openlattice.launchpad.LaunchPadCli;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.core.tools.picocli.CommandLine.MissingParameterException;
 
@@ -66,16 +69,23 @@ public class LaunchpadDatasource {
         this.name = name;
         this.url = url;
         this.driver = driver;
-        if ( !StringUtils.equals( CSV_DRIVER, driver ) ) {
+        if ( LaunchPad.cl.hasOption( LaunchPadCli.CLIENT_USERNAME )) {
+            this.user = LaunchPad.cl.getOptionValue( LaunchPadCli.CLIENT_USERNAME );
+        } else if ( !StringUtils.equals( CSV_DRIVER, driver ) && !LaunchPad.cl.hasOption( LaunchPadCli.CLIENT_USERNAME )) {
             this.user = user.orElseThrow( () -> new MissingParameterException(
                     "A username must be specified for database connections." ) );
         } else {
             //User can be blank for CSV.
             this.user = "";
         }
-        //Depending on server configuration a password may not be required to establish a connection.
-        this.password = password.orElse( "" );
-        this.fetchSize = fetchSize.orElse( 20000 );
+
+        if ( LaunchPad.cl.hasOption( LaunchPadCli.CLIENT_PASSWORD )) {
+            this.password = LaunchPad.cl.getOptionValue( LaunchPadCli.CLIENT_PASSWORD );
+        } else {
+            //Depending on server configuration a password may not be required to establish a connection.
+            this.password = password.orElse( "" );
+        }
+        this.fetchSize = fetchSize.orElse( 20_000 );
 
         properties = new Properties();
         properties.setProperty( "user", this.user );
