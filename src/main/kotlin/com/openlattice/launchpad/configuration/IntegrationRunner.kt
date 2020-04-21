@@ -24,15 +24,14 @@ package com.openlattice.launchpad.configuration
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
 import com.openlattice.launchpad.LaunchPad.CSV_DRIVER
+import com.openlattice.launchpad.LaunchPad.ORC_DRIVER
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 import java.net.InetAddress
 import java.time.OffsetDateTime
 import java.util.*
@@ -72,7 +71,9 @@ class IntegrationRunner {
             val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
-            destinations.forEach { (_, destination) ->
+            destinations.filter {
+                isJdbcDatasource( it.value )
+            }.forEach { (_, destination) ->
                 destination.hikariDatasource.connection.use { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
@@ -126,13 +127,17 @@ class IntegrationRunner {
                         when (destination.writeDriver) {
                             CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
                             "parquet" -> ds.write().parquet(destination.writeUrl)
-                            "orc" -> ds.write().orc(destination.writeUrl)
+                            "orc" -> ds.write().orc("/Users/drew/dest.orc")
                             else -> toDatabase(integrationConfiguration.name, ds, destination, integration, start)
                         }
                         logger.info("Wrote to name: {}", destination)
                     }
                 }
             }
+        }
+
+        private fun isJdbcDatasource( destination: LaunchpadDestination ): Boolean {
+            return CSV_DRIVER != destination.writeDriver && ORC_DRIVER != destination.writeDriver
         }
 
         @SuppressFBWarnings(
@@ -178,6 +183,10 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
+            if (!isJdbcDatasource( destination )){
+                logger.info("Starting integration $integrationName to ${destination.name}")
+                return
+            }
             try {
                 unsafeExecuteSql(
                         IntegrationTables.LOG_INTEGRATION_STARTED,
@@ -216,6 +225,10 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
+            if (!isJdbcDatasource( destination )){
+                logger.info("Integration succeeded")
+                return
+            }
             try {
                 unsafeExecuteSql(
                         IntegrationTables.LOG_SUCCESSFUL_INTEGRATION,
@@ -235,6 +248,10 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
+            if (!isJdbcDatasource( destination )){
+                logger.info("Integration failed")
+                return
+            }
             try {
                 unsafeExecuteSql(
                         IntegrationTables.LOG_FAILED_INTEGRATION,
@@ -268,7 +285,5 @@ class IntegrationRunner {
                         .load()
             }
         }
-
-
     }
 }

@@ -24,13 +24,12 @@ package com.openlattice.launchpad;
 import com.openlattice.launchpad.configuration.IntegrationConfiguration;
 import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
 import com.openlattice.launchpad.configuration.IntegrationRunner;
-import java.io.IOException;
-import java.util.List;
-
 import com.openlattice.launchpad.configuration.LaunchpadDestination;
-import org.apache.spark.sql.SaveMode;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
@@ -39,6 +38,11 @@ public class LaunchPadTests {
     @Test
     public void runIntegration() throws IOException {
         IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
+    }
+
+    @Test
+    public void runJdbcOrcIntegration() throws IOException {
+        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readJdbcToOrcConfiguration());
     }
 
     @Test

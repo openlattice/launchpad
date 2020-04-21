@@ -23,8 +23,9 @@ package com.openlattice.launchpad.configuration;
 
 import com.google.common.io.Resources;
 import com.openlattice.launchpad.AbstractJacksonSerializationTest;
-import java.io.IOException;
 import org.junit.Ignore;
+
+import java.io.IOException;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
@@ -44,6 +45,10 @@ public class IntegrationConfigurationTests extends AbstractJacksonSerializationT
 
     public static IntegrationConfiguration readIntegrationConfiguration() throws IOException {
         return yaml.readValue( Resources.getResource( "integrations.yaml" ), IntegrationConfiguration.class );
+    }
+
+    public static IntegrationConfiguration readJdbcToOrcConfiguration() throws IOException {
+        return yaml.readValue( Resources.getResource( "integrations_jdbc_orc.yaml" ), IntegrationConfiguration.class );
     }
 
     @Ignore
