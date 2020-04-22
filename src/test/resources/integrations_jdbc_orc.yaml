@@ -3,13 +3,13 @@ description: "Copying over data from local table into .orc file"
 datasources:
   - name: localdb
     url: "jdbc:postgresql://localhost:5432/openlattice"
-    username: "example_user"
+    username: "drew"
     password: ""
     driver: org.postgresql.Driver
     fetchSize: 20000
 destinations:
   - name: orcFile
-    url: ""
+    url: "/tmp/orc-integ"
     driver: "orc"
     username: ""
     password: ""
