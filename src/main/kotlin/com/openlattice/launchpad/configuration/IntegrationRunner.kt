@@ -23,8 +23,7 @@ package com.openlattice.launchpad.configuration
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
-import com.openlattice.launchpad.LaunchPad.CSV_DRIVER
-import com.openlattice.launchpad.LaunchPad.ORC_DRIVER
+import com.openlattice.launchpad.LaunchPad.*
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
@@ -72,7 +71,7 @@ class IntegrationRunner {
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
             destinations.filter {
-                isJdbcDatasource( it.value )
+                isJdbcDestination( it.value )
             }.forEach { (_, destination) ->
                 destination.hikariDatasource.connection.use { conn ->
                     conn.createStatement().use { stmt ->
@@ -126,8 +125,8 @@ class IntegrationRunner {
                         //Only CSV and JDBC are tested.
                         when (destination.writeDriver) {
                             CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
-                            "parquet" -> ds.write().parquet(destination.writeUrl)
-                            "orc" -> ds.write().orc("/Users/drew/dest.orc")
+                            PARQUET_DRIVER -> ds.write().parquet(destination.writeUrl)
+                            ORC_DRIVER -> ds.write().format("orc").save(destination.writeUrl)
                             else -> toDatabase(integrationConfiguration.name, ds, destination, integration, start)
                         }
                         logger.info("Wrote to name: {}", destination)
@@ -136,8 +135,8 @@ class IntegrationRunner {
             }
         }
 
-        private fun isJdbcDatasource( destination: LaunchpadDestination ): Boolean {
-            return CSV_DRIVER != destination.writeDriver && ORC_DRIVER != destination.writeDriver
+        private fun isJdbcDestination(destination: LaunchpadDestination ): Boolean {
+            return CSV_DRIVER != destination.writeDriver && ORC_DRIVER != destination.writeDriver && PARQUET_DRIVER != destination.writeDriver
         }
 
         @SuppressFBWarnings(
@@ -183,7 +182,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isJdbcDatasource( destination )){
+            if (!isJdbcDestination( destination )){
                 logger.info("Starting integration $integrationName to ${destination.name}")
                 return
             }
@@ -225,7 +224,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isJdbcDatasource( destination )){
+            if (!isJdbcDestination( destination )){
                 logger.info("Integration succeeded")
                 return
             }
@@ -248,7 +247,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isJdbcDatasource( destination )){
+            if (!isJdbcDestination( destination )){
                 logger.info("Integration failed")
                 return
             }

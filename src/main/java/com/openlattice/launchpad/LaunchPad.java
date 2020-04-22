@@ -23,9 +23,10 @@ import java.io.IOException;
  */
 @SuppressFBWarnings(value = "SECPTI", justification = "User input for file is considered trusted.")
 public class LaunchPad {
-    public static final  String       CSV_DRIVER   = "com.openlattice.launchpad.Csv";
-    public static final  String       ORC_DRIVER   = "orc";
-    private static final ObjectMapper mapper       = createYamlMapper();
+    public static final  String       CSV_DRIVER        = "com.openlattice.launchpad.Csv";
+    public static final  String       ORC_DRIVER        = "orc";
+    public static final  String       PARQUET_DRIVER    = "parquet";
+    private static final ObjectMapper mapper            = createYamlMapper();
 
 
     private static final Logger logger = LoggerFactory.getLogger( LaunchPad.class );
