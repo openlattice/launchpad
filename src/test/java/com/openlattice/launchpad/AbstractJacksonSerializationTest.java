@@ -28,13 +28,14 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.function.Consumer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.function.Consumer;
 
 public abstract class AbstractJacksonSerializationTest<T> {
     protected static final ObjectMapper mapper = createJsonMapper();
@@ -57,9 +58,6 @@ public abstract class AbstractJacksonSerializationTest<T> {
                 yaml.writeValueAsString( data ),
                 mapper.writeValueAsBytes( data ),
                 smile.writeValueAsBytes( data ) );
-    }
-
-    protected void configureSerializers() {
     }
 
     protected abstract T getSampleData();

@@ -22,6 +22,8 @@
 package com.openlattice.launchpad.configuration;
 
 import com.openlattice.launchpad.AbstractJacksonSerializationTest;
+import org.junit.Assert;
+
 import java.io.IOException;
 
 /**
@@ -33,6 +35,8 @@ public class IntegrationSerdesTests extends AbstractJacksonSerializationTest<Int
             return IntegrationConfigurationTests.readIntegrationConfiguration().getIntegrations().values().iterator()
                     .next().values().iterator().next();
         } catch ( IOException e ) {
+            e.printStackTrace();
+            Assert.fail("IOException getting sample data ");
             return null;
         }
     }

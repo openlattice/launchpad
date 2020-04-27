@@ -26,13 +26,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.sql.SaveMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
@@ -47,24 +48,27 @@ public class LaunchpadDestination {
     private static final String WRITE_MODE          = "writeMode";
     private static final String USER                = "username";
     private static final String PASSWORD            = "password";
+    private static final String DATA_FORMAT         = "dataFormat";
+    private static final String PROPERTIES          = "properties";
+    private static final String BATCH_SIZE          = "batchSize";
 
-    private static final String   PROPERTIES         = "properties";
-    private static final String   BATCH_SIZE         = "batchSize";
-    private static final SaveMode DEFAULT_WRITE_MODE = SaveMode.Overwrite ;
-    private static final int      DEFAULT_BATCH_SIZE = 20000;
-    private static final Logger   logger             = LoggerFactory.getLogger( LaunchpadDestination.class );
+    private static final SaveMode    DEFAULT_WRITE_MODE = SaveMode.Overwrite ;
+    private static final int         DEFAULT_BATCH_SIZE = 20_000;
+    private static final Logger      logger = LoggerFactory.getLogger( LaunchpadDestination.class );
 
-    private final String     name;
-    private final String     writeUrl;
-    private final String     writeDriver;
-    private final Properties properties;
-    private final int        batchSize;
-    private final SaveMode     writeMode;
+    private final String        name;
+    private final String        writeUrl;
+    private final String        writeDriver;
+    private final String        dataFormat;
+    private final Properties    properties;
+    private final int           batchSize;
+    private final SaveMode      writeMode;
 
     public LaunchpadDestination(
             @JsonProperty( NAME ) String name,
             @JsonProperty( WRITE_URL ) String writeUrl,
             @JsonProperty( WRITE_DRIVER ) String writeDriver,
+            @JsonProperty( DATA_FORMAT ) Optional<String> dataFormat,
             @JsonProperty( WRITE_MODE ) Optional<String> writeMode,
             @JsonProperty( USER ) Optional<String> username,
             @JsonProperty( PASSWORD ) Optional<String> password,
@@ -75,6 +79,8 @@ public class LaunchpadDestination {
         this.writeUrl = writeUrl;
         this.writeDriver = writeDriver;
         this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
+        // if dataFormat not set, use writeDriver value
+        this.dataFormat = dataFormat.orElse( writeDriver );
         this.properties = properties.orElse( new Properties() );
         this.writeMode = SaveMode.valueOf( writeMode.orElse( DEFAULT_WRITE_MODE.name()));
 
@@ -90,6 +96,11 @@ public class LaunchpadDestination {
     @JsonProperty( WRITE_DRIVER )
     public String getWriteDriver() {
         return writeDriver;
+    }
+
+    @JsonProperty( DATA_FORMAT )
+    public String getDataFormat() {
+        return dataFormat;
     }
 
     @JsonProperty( WRITE_URL )
@@ -125,11 +136,12 @@ public class LaunchpadDestination {
                 Objects.equals( name, that.name ) &&
                 Objects.equals( writeUrl, that.writeUrl ) &&
                 Objects.equals( writeDriver, that.writeDriver ) &&
+                Objects.equals( dataFormat, that.dataFormat) &&
                 Objects.equals( properties, that.properties );
     }
 
     @Override public int hashCode() {
-        return Objects.hash( name, writeUrl, writeDriver, properties, batchSize );
+        return Objects.hash( name, writeUrl, writeDriver, dataFormat, properties, batchSize );
     }
 
     @JsonIgnore

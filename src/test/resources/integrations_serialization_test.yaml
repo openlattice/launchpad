@@ -1,0 +1,57 @@
+name: "example_filetransfer"
+description: "Copying over data from demo health table into OpenLattice server"
+awsClient:
+  regionName: ""
+  accessKeyId: ""
+  secretAccessKey: ""
+datasources:
+  - name: remotedb
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+    username: "example_user"
+    password: "examplepassword"
+    driver: org.postgresql.Driver
+    fetchSize: 20000
+  - name: remotedb2
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+    username: "example_user"
+    password: "examplepassword"
+    driver: org.postgresql.Driver
+    fetchSize: 20000
+destinations:
+  - name: localdb
+    url: "jdbc:postgresql://localhost:5432/example_integration"
+    driver: org.postgresql.Driver
+    username: "oltest"
+    password: "test"
+    batchSize: 10000
+  - name: localdb2
+    url: "jdbc:postgresql://localhost:5432/example_integration"
+    driver: org.postgresql.Driver
+    writeMode: "Append"
+    username: "oltest"
+    password: "test"
+    batchSize: 10000
+integrations:
+  remotedb:
+    localdb:
+      - source: "demo_justice"
+        destination: demo_justice_OLcopy
+        description: "Some other integration"
+      - source: "( select * from demo_health where \"FirstName\" = 'Jennifer') dh"
+        destination: demo_health_subset_OLcopy
+        description: "Some integration"
+    localdb2:
+      - source: "( select * from demo_health where \"FirstName\" = 'Jennifer') dh"
+        destination: demo_health_subset_OLcopy
+        description: "Some integration"
+      - source: "demo_justice"
+        destination: demo_justice_OLcopy
+        description: "Some other integration"
+  remotedb2:
+    localdb2:
+      - source: "( select * from demo_health where \"FirstName\" = 'Jennifer') dh"
+        destination: demo_health_subset_OLcopy
+        description: "Some integration"
+      - source: "demo_justice"
+        destination: demo_justice_OLcopy
+        description: "Some other integration"

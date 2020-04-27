@@ -1,0 +1,24 @@
+name: "example_jdbc_to_s3_csv"
+description: "Copying over data from local table into .csv file in s3"
+awsClient:
+  regionName: ""
+  accessKeyId: ""
+  secretAccessKey: ""
+datasources:
+  - name: remotedb
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+    username: "example_user"
+    password: "examplepassword"
+    driver: org.postgresql.Driver
+    fetchSize: 20000
+destinations:
+  - name: s3CsvFile
+    url: "s3a://launchpad-test-bucket/jdbc-s3-csv-test/example_integration"
+    driver: "s3"
+    dataFormat: "csv"
+integrations:
+  remotedb:
+    s3CsvFile:
+      - source: "( select * from demo_health where \"GivenName\" = 'Jennifer') dh"
+        destination: s3CsvFile
+        description: "Some integration"

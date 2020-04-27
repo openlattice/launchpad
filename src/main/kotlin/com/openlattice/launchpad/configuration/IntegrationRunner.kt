@@ -23,10 +23,10 @@ package com.openlattice.launchpad.configuration
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
-import com.openlattice.launchpad.LaunchPad.*
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
+import org.apache.spark.sql.DataFrameWriter
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
@@ -42,10 +42,7 @@ import java.util.*
 class IntegrationRunner {
     companion object {
         private val logger = LoggerFactory.getLogger(IntegrationRunner::class.java)
-        private val sparkSession = SparkSession.builder()
-                .master("local[${Runtime.getRuntime().availableProcessors()}]")
-                .appName("integration")
-                .orCreate
+
         private val hostName = try {
             val localhost = InetAddress.getLocalHost()
             if (localhost.hostName.isBlank()) {
@@ -59,6 +56,29 @@ class IntegrationRunner {
             id.toString()
         }
 
+        fun configureOrGetSparkSession(integrationConfiguration: IntegrationConfiguration): SparkSession {
+            val session = SparkSession.builder()
+                    .master("local[${Runtime.getRuntime().availableProcessors()}]")
+                    .appName("integration")
+            if ( integrationConfiguration.awsConfig.isPresent ){
+                session.config("fs.s3a.awsAccessKeyId", integrationConfiguration.awsConfig.get().accessKeyId )
+                        .config("fs.s3a.awsSecretAccessKey", integrationConfiguration.awsConfig.get().secretAccessKey )
+                        .config("fs.s3a.access.key", integrationConfiguration.awsConfig.get().accessKeyId )
+                        .config("fs.s3a.secret.key", integrationConfiguration.awsConfig.get().secretAccessKey )
+                        .config("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.DefaultAWSCredentialsProviderChain" )
+                        .config("fs.s3n.awsSecretAccessKey", integrationConfiguration.awsConfig.get().secretAccessKey )
+                        .config("fs.s3a.awsAccessKeyId", integrationConfiguration.awsConfig.get().accessKeyId )
+                        .config("fs.s3n.awsSecretAccessKey", integrationConfiguration.awsConfig.get().secretAccessKey )
+                        .config("spark.hadoop.fs.s3a.multiobjectdelete.enable","false")
+                        .config("spark.hadoop.fs.s3a.fast.upload","true")
+                        .config("spark.sql.parquet.filterPushdown", "true")
+                        .config("spark.sql.parquet.mergeSchema", "false")
+                        .config("spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version", "2")
+                        .config("spark.speculation", "false")
+            }
+            return session.orCreate
+        }
+
         @SuppressFBWarnings(
                 value = ["DM_EXIT"],
                 justification = "Intentionally shutting down JVM on terminal error"
@@ -69,6 +89,8 @@ class IntegrationRunner {
             val integrationsMap = integrationConfiguration.integrations
             val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
+
+            val session = configureOrGetSparkSession(integrationConfiguration)
 
             destinations.filter {
                 isJdbcDestination( it.value )
@@ -108,7 +130,7 @@ class IntegrationRunner {
                         logStarted(integrationConfiguration.name, destination, integration, start)
                         val ds = try {
                             logger.info("Transferring ${datasource.name} with query ${integration.source}")
-                            getSourceDataset(datasource, integration)
+                            getSourceDataset(datasource, integration, session)
                         } catch (ex: Exception) {
                             logFailed(datasourceName, destination, integration, start)
                             logger.error(
@@ -123,11 +145,28 @@ class IntegrationRunner {
                         }
                         logger.info("Read from source: {}", datasource)
                         //Only CSV and JDBC are tested.
+
+                        val sparkWriter = when (destination.dataFormat) {
+                            CSV_FORMAT, LEGACY_CSV_FORMAT -> {
+                                ds.write()
+                                        .option("header", true)
+                                        .format("csv")
+                            }
+                            ORC_FORMAT -> ds.write().format(destination.dataFormat)
+                            else -> {
+                                ds.write()
+                                        .option("batchsize", destination.batchSize.toLong())
+                                        .option("driver", destination.writeDriver)
+                                        .mode( destination.writeMode )
+                                        .format("jdbc")
+                            }
+                        }
                         when (destination.writeDriver) {
-                            CSV_DRIVER -> ds.write().option("header", true).csv(destination.writeUrl)
-                            PARQUET_DRIVER -> ds.write().parquet(destination.writeUrl)
-                            ORC_DRIVER -> ds.write().format("orc").save(destination.writeUrl)
-                            else -> toDatabase(integrationConfiguration.name, ds, destination, integration, start)
+                            FILESYSTEM_DRIVER -> sparkWriter.save(destination.writeUrl)
+                            S3_DRIVER -> {
+                                sparkWriter.save(destination.writeUrl)
+                            }
+                            else -> toDatabase(integrationConfiguration.name, sparkWriter, destination, integration, start)
                         }
                         logger.info("Wrote to name: {}", destination)
                     }
@@ -136,7 +175,7 @@ class IntegrationRunner {
         }
 
         private fun isJdbcDestination(destination: LaunchpadDestination ): Boolean {
-            return CSV_DRIVER != destination.writeDriver && ORC_DRIVER != destination.writeDriver && PARQUET_DRIVER != destination.writeDriver
+            return !NON_JDBC_DRIVERS.contains(destination.writeDriver)
         }
 
         @SuppressFBWarnings(
@@ -146,21 +185,17 @@ class IntegrationRunner {
         @JvmStatic
         private fun toDatabase(
                 integrationName: String,
-                ds: Dataset<Row>,
+                ds: DataFrameWriter<Row>,
                 destination: LaunchpadDestination,
                 integration: Integration,
                 start: OffsetDateTime
         ) {
             try {
-                ds.write()
-                        .option("batchsize", destination.batchSize.toLong())
-                        .option("driver", destination.writeDriver)
-                        .mode( destination.writeMode )
-                        .jdbc(
-                                destination.writeUrl,
-                                integration.destination,
-                                destination.properties
-                        )
+                ds.jdbc(
+                        destination.writeUrl,
+                        integration.destination,
+                        destination.properties
+                )
                 logSuccessful(integrationName, destination, integration, start)
             } catch (ex: Exception) {
                 logFailed(integrationName, destination, integration, start)
@@ -265,9 +300,9 @@ class IntegrationRunner {
         }
 
         @JvmStatic
-        private fun getSourceDataset(datasource: LaunchpadDatasource, integration: Integration): Dataset<Row> {
+        private fun getSourceDataset(datasource: LaunchpadDatasource, integration: Integration, sparkSession: SparkSession ): Dataset<Row> {
             when (datasource.driver) {
-                CSV_DRIVER -> return sparkSession
+                CSV_FORMAT, LEGACY_CSV_FORMAT  -> return sparkSession
                         .read()
                         .option("header", datasource.isHeader)
                         .option("inferSchema", true)

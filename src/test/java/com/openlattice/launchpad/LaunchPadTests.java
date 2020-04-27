@@ -35,6 +35,7 @@ import java.util.List;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchPadTests {
+
     @Test
     public void runIntegration() throws IOException {
         IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );

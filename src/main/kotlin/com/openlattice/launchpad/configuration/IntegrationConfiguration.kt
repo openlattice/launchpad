@@ -22,14 +22,26 @@
 package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.common.collect.LinkedHashMultimap
 import com.google.common.collect.ListMultimap
+import com.google.common.collect.Sets
+import java.util.*
 
-const val NAME = "name"
-const val DATASOURCES = "datasources"
-const val DESTINATIONS = "destinations"
-const val DESCRIPTION = "description"
-const val INTEGRATIONS = "integrations"
+private const val NAME              = "name"
+private const val DATASOURCES       = "datasources"
+private const val DESTINATIONS      = "destinations"
+private const val DESCRIPTION       = "description"
+private const val INTEGRATIONS      = "integrations"
+private const val AWS_CLIENT        = "awsClient"
+private const val SOURCE            = "source"
+private const val DESTINATION       = "destination"
+
+const val LEGACY_CSV_FORMAT         = "com.openlattice.launchpad.csv"
+const val CSV_FORMAT                = "csv"
+const val ORC_FORMAT                = "orc"
+const val FILESYSTEM_DRIVER         = "filesystem"
+const val S3_DRIVER                 = "s3"
+
+val NON_JDBC_DRIVERS: Set<String>   = Sets.newHashSet(S3_DRIVER, FILESYSTEM_DRIVER)
 
 /**
  *
@@ -38,7 +50,29 @@ const val INTEGRATIONS = "integrations"
 data class IntegrationConfiguration(
         @JsonProperty(NAME) val name: String,
         @JsonProperty(DESCRIPTION) val description: String,
+        @JsonProperty(AWS_CLIENT) val awsConfig: Optional<AwsS3ClientConfiguration>,
         @JsonProperty(DATASOURCES) val datasources: List<LaunchpadDatasource>,
         @JsonProperty(DESTINATIONS) val destinations: List<LaunchpadDestination>,
         @JsonProperty(INTEGRATIONS) val integrations: Map<String, ListMultimap<String, Integration>>
 )
+
+/**
+ *
+ * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
+ */
+data class Integration(
+        @JsonProperty(DESCRIPTION) val description : String = "",
+        @JsonProperty(SOURCE) val source: String,
+        @JsonProperty(DESTINATION) val destination: String,
+        @JsonProperty("gluttony") val gluttony : Boolean = false
+)
+
+/**
+ * @author Drew Bailey &lt;drew@openlattice.com&gt;
+ */
+data class AwsS3ClientConfiguration(
+        @JsonProperty("regionName") val regionName: String,
+        @JsonProperty("accessKeyId") val accessKeyId: String,
+        @JsonProperty("secretAccessKey") val secretAccessKey: String
+)
+

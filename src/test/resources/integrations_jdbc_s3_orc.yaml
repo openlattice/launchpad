@@ -1,0 +1,25 @@
+name: "example_jdbc_to_s3_orc"
+description: "Copying over data from local table into .orc file in s3"
+awsClient:
+  regionName: ""
+  accessKeyId: ""
+  secretAccessKey: ""
+datasources:
+  - name: remotedb
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+    username: "example_user"
+    password: "examplepassword"
+    driver: org.postgresql.Driver
+    fetchSize: 20000
+destinations:
+  - name: s3OrcFile
+    url: "s3a://launchpad-test-bucket/jdbc-s3-orc-test/example_integration"
+    driver: "s3"
+    dataFormat: "orc"
+integrations:
+  remotedb:
+    s3OrcFile:
+      - source: "( select * from demo_health where \"GivenName\" = 'Jennifer') dh"
+        destination: s3OrcFile
+        description: "Some integration"
+
