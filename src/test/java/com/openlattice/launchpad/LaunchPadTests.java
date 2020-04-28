@@ -37,16 +37,6 @@ import java.util.List;
 public class LaunchPadTests {
 
     @Test
-    public void runIntegration() throws IOException {
-        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readIntegrationConfiguration() );
-    }
-
-    @Test
-    public void runJdbcOrcIntegration() throws IOException {
-        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readJdbcToOrcConfiguration());
-    }
-
-    @Test
     public void runAppendOnlyIntegration() throws IOException {
         IntegrationConfiguration integrationConfiguration = IntegrationConfigurationTests
                 .readAppendOnlyIntegrationConfiguration();

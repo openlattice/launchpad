@@ -9,7 +9,6 @@ import java.io.IOException
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
 class LaunchpadSmokeTests {
-
     @Before
     fun setup() {
         //connect to db and create
