@@ -135,11 +135,12 @@ dependencies {
 
     compile "com.google.guava:guava:${guava_version}"
 
+    hadoop_version='2.10.0'
     compile "org.apache.spark:spark-core_2.11:${spark_version}"
     compile "org.apache.spark:spark-sql_2.11:${spark_version}"
-    compile 'org.apache.hadoop:hadoop-aws:3.2.1'
-    compile 'org.apache.hadoop:hadoop-hdfs:3.2.1'
-    compile 'org.apache.hadoop:hadoop-common:3.2.1'
+    compile "org.apache.hadoop:hadoop-aws:${hadoop_version}"
+    compile "org.apache.hadoop:hadoop-hdfs:${hadoop_version}"
+    compile "org.apache.hadoop:hadoop-common:${hadoop_version}"
     compile group: 'com.amazonaws', name: 'aws-java-sdk-bundle', version: '1.11.769'
 
     compile "com.fasterxml.jackson.core:jackson-core:${jackson_version}"

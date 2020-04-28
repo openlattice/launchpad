@@ -40,11 +40,13 @@ class LaunchpadSmokeTests {
     @Throws(IOException::class)
     fun runJdbcS3CsvIntegration() {
         IntegrationRunner.runIntegrations( IntegrationConfigLoader.fromJdbc.toS3.csvFormat() )
+        // TODO: validate results
     }
 
     @Test
     @Throws(IOException::class)
     fun runJdbcS3OrcIntegration() {
         IntegrationRunner.runIntegrations( IntegrationConfigLoader.fromJdbc.toS3.orcFormat() )
+        // TODO: validate results
     }
 }
