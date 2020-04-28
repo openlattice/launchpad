@@ -61,18 +61,13 @@ class IntegrationRunner {
                     .master("local[${Runtime.getRuntime().availableProcessors()}]")
                     .appName("integration")
             if ( integrationConfiguration.awsConfig.isPresent ){
-                session.config("fs.s3a.awsAccessKeyId", integrationConfiguration.awsConfig.get().accessKeyId )
-                        .config("fs.s3a.awsSecretAccessKey", integrationConfiguration.awsConfig.get().secretAccessKey )
-                        .config("fs.s3a.access.key", integrationConfiguration.awsConfig.get().accessKeyId )
-                        .config("fs.s3a.secret.key", integrationConfiguration.awsConfig.get().secretAccessKey )
-                        .config("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.DefaultAWSCredentialsProviderChain" )
-                        .config("fs.s3n.awsSecretAccessKey", integrationConfiguration.awsConfig.get().secretAccessKey )
-                        .config("fs.s3a.awsAccessKeyId", integrationConfiguration.awsConfig.get().accessKeyId )
-                        .config("fs.s3n.awsSecretAccessKey", integrationConfiguration.awsConfig.get().secretAccessKey )
+                val config = integrationConfiguration.awsConfig.get()
+                session
+                        .config("fs.s3a.access.key", config.accessKeyId )
+                        .config("fs.s3a.secret.key", config.secretAccessKey )
+                        .config("fs.s3a.endpoint", "s3.${config.regionName}.amazonaws.com")
                         .config("spark.hadoop.fs.s3a.multiobjectdelete.enable","false")
                         .config("spark.hadoop.fs.s3a.fast.upload","true")
-                        .config("spark.sql.parquet.filterPushdown", "true")
-                        .config("spark.sql.parquet.mergeSchema", "false")
                         .config("spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version", "2")
                         .config("spark.speculation", "false")
             }
