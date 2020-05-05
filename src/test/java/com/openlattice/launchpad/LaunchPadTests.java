@@ -25,7 +25,6 @@ import com.openlattice.launchpad.configuration.IntegrationConfiguration;
 import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
 import com.openlattice.launchpad.configuration.IntegrationRunner;
 import com.openlattice.launchpad.configuration.LaunchpadDestination;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -35,7 +34,6 @@ import java.util.List;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 public class LaunchPadTests {
-
     @Test
     public void runAppendOnlyIntegration() throws IOException {
         IntegrationConfiguration integrationConfiguration = IntegrationConfigurationTests
@@ -45,11 +43,5 @@ public class LaunchPadTests {
             System.out.println( d.getName() + ": "  + d.getWriteMode());
         }
         IntegrationRunner.runIntegrations( integrationConfiguration  );
-    }
-
-    @Test
-    @Ignore
-    public void testLoadOracleDriver() throws IOException {
-        IntegrationRunner.runIntegrations( IntegrationConfigurationTests.readOracleIntegrationConfiguration() );
     }
 }

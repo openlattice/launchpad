@@ -23,8 +23,8 @@ package com.openlattice.launchpad.configuration;
 
 import com.google.common.io.Resources;
 import com.openlattice.launchpad.AbstractJacksonSerializationTest;
+import com.openlattice.launchpad.IntegrationConfigLoader;
 import org.junit.Assert;
-import org.junit.Ignore;
 
 import java.io.IOException;
 
@@ -34,7 +34,7 @@ import java.io.IOException;
 public class IntegrationConfigurationTests extends AbstractJacksonSerializationTest<IntegrationConfiguration> {
     @Override protected IntegrationConfiguration getSampleData() {
         try {
-            return readIntegrationConfiguration();
+            return IntegrationConfigLoader.fromJdbc.toJdbc.INSTANCE.implicitFormat();
         } catch ( IOException e ) {
             e.printStackTrace();
             Assert.fail("IOException getting sample data ");
@@ -46,15 +46,6 @@ public class IntegrationConfigurationTests extends AbstractJacksonSerializationT
         return IntegrationConfiguration.class;
     }
 
-    public static IntegrationConfiguration readIntegrationConfiguration() throws IOException {
-        return yaml.readValue( Resources.getResource( "integrations.yaml" ), IntegrationConfiguration.class );
-    }
-
-    public static IntegrationConfiguration readJdbcToOrcConfiguration() throws IOException {
-        return yaml.readValue( Resources.getResource( "integrations_jdbc_orc.yaml" ), IntegrationConfiguration.class );
-    }
-
-    @Ignore
     public static IntegrationConfiguration readOracleIntegrationConfiguration() throws IOException {
         return yaml.readValue( Resources.getResource( "integrations_oracle.yaml" ), IntegrationConfiguration.class );
     }

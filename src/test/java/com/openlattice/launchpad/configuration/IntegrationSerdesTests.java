@@ -22,6 +22,7 @@
 package com.openlattice.launchpad.configuration;
 
 import com.openlattice.launchpad.AbstractJacksonSerializationTest;
+import com.openlattice.launchpad.IntegrationConfigLoader;
 import org.junit.Assert;
 
 import java.io.IOException;
@@ -32,7 +33,8 @@ import java.io.IOException;
 public class IntegrationSerdesTests extends AbstractJacksonSerializationTest<Integration> {
     @Override protected Integration getSampleData() {
         try {
-            return IntegrationConfigurationTests.readIntegrationConfiguration().getIntegrations().values().iterator()
+            IntegrationConfiguration config = IntegrationConfigLoader.fromJdbc.toJdbc.INSTANCE.implicitFormat();
+            return config.getIntegrations().values().iterator()
                     .next().values().iterator().next();
         } catch ( IOException e ) {
             e.printStackTrace();

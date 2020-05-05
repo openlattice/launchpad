@@ -21,19 +21,20 @@
 
 package com.openlattice.launchpad.configuration
 
+import com.codahale.metrics.MetricRegistry
+import com.codahale.metrics.Slf4jReporter
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
-import org.apache.spark.sql.DataFrameWriter
-import org.apache.spark.sql.Dataset
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.*
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
+import java.time.Clock
 import java.time.OffsetDateTime
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -42,6 +43,8 @@ import java.util.*
 class IntegrationRunner {
     companion object {
         private val logger = LoggerFactory.getLogger(IntegrationRunner::class.java)
+
+        private val timer = MetricRegistry().timer("uploadTime")
 
         private val hostName = try {
             val localhost = InetAddress.getLocalHost()
@@ -85,8 +88,6 @@ class IntegrationRunner {
             val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
             val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
 
-            val session = configureOrGetSparkSession(integrationConfiguration)
-
             destinations.filter {
                 isJdbcDestination( it.value )
             }.forEach { (_, destination) ->
@@ -96,6 +97,8 @@ class IntegrationRunner {
                     }
                 }
             }
+
+            val session = configureOrGetSparkSession(integrationConfiguration)
 
             integrationsMap.forEach { (datasourceName, destinationsForDatasource) ->
                 val datasource = datasources.getValue(datasourceName)
@@ -145,9 +148,9 @@ class IntegrationRunner {
                             CSV_FORMAT, LEGACY_CSV_FORMAT -> {
                                 ds.write()
                                         .option("header", true)
-                                        .format("csv")
+                                        .format( CSV_FORMAT )
                             }
-                            ORC_FORMAT -> ds.write().format(destination.dataFormat)
+                            ORC_FORMAT -> ds.write().format( ORC_FORMAT )
                             else -> {
                                 ds.write()
                                         .option("batchsize", destination.batchSize.toLong())
@@ -156,6 +159,8 @@ class IntegrationRunner {
                                         .format("jdbc")
                             }
                         }
+                        logger.info("Created spark writer")
+                        val ctxt = timer.time()
                         when (destination.writeDriver) {
                             FILESYSTEM_DRIVER -> sparkWriter.save(destination.writeUrl)
                             S3_DRIVER -> {
@@ -163,7 +168,10 @@ class IntegrationRunner {
                             }
                             else -> toDatabase(integrationConfiguration.name, sparkWriter, destination, integration, start)
                         }
-                        logger.info("Wrote to name: {}", destination)
+                        val elapsedNs = ctxt.stop()
+                        val secs = elapsedNs/1_000_000_000.0
+                        val mins = secs/60.0
+                        logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
                     }
                 }
             }
