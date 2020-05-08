@@ -17,7 +17,7 @@ class IntegrationConfigLoader: AbstractJacksonSerializationTest<IntegrationConfi
         } catch (e: IOException) {
             e.printStackTrace()
             Assert.fail("IOException getting sample data ")
-            return IntegrationConfiguration( "", "", Optional.empty(), listOf(), listOf(), mapOf())
+            return IntegrationConfiguration( "", "", Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), mapOf())
         }
     }
 

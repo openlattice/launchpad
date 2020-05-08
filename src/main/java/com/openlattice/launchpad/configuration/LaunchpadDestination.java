@@ -34,10 +34,19 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.CSV_FORMAT;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.LEGACY_CSV_FORMAT;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_DATA_CHUNK_SIZE;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_WRITE_MODE;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.S3_DRIVER;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.FILESYSTEM_DRIVER;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.ORC_FORMAT;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.NON_JDBC_DRIVERS;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
+@Deprecated
 public class LaunchpadDestination {
     private static final String NAME                = "name";
     private static final String JDBC_URL            ="jdbcUrl";
@@ -52,11 +61,11 @@ public class LaunchpadDestination {
     private static final String PROPERTIES          = "properties";
     private static final String BATCH_SIZE          = "batchSize";
 
-    private static final SaveMode    DEFAULT_WRITE_MODE = SaveMode.Overwrite ;
-    private static final int         DEFAULT_BATCH_SIZE = 20_000;
     private static final Logger      logger = LoggerFactory.getLogger( LaunchpadDestination.class );
 
     private final String        name;
+    private final String        username;
+    private final String        password;
     private final String        writeUrl;
     private final String        writeDriver;
     private final String        dataFormat;
@@ -78,7 +87,7 @@ public class LaunchpadDestination {
         this.name = name;
         this.writeUrl = writeUrl;
         this.writeDriver = writeDriver;
-        this.batchSize = batchSize.orElse( DEFAULT_BATCH_SIZE );
+        this.batchSize = batchSize.orElse( DEFAULT_DATA_CHUNK_SIZE );
         // if dataFormat not set, use writeDriver value
         this.dataFormat = dataFormat.orElse( writeDriver );
         this.properties = properties.orElse( new Properties() );
@@ -87,10 +96,61 @@ public class LaunchpadDestination {
         this.properties.put(JDBC_URL, writeUrl);
         this.properties.put(MAXIMUM_POOL_SIZE, "1");
         this.properties.put(CONNECTION_TIMEOUT, "120000"); //2-minute connection timeout
-        username.ifPresent( u -> this.properties.setProperty( "user", u ) );
-        username.ifPresent( u -> this.properties.setProperty( "username", u ) );
-        password.ifPresent( p -> this.properties.setProperty( PASSWORD, p ) );
 
+        this.username = username.orElse( "" );
+        this.password = password.orElse( "" );
+
+        if ( !NON_JDBC_DRIVERS.contains( writeDriver ) && StringUtils.isBlank( this.username )){
+            logger.warn( "connecting to " + name + " with blank username!");
+        }
+        if ( !NON_JDBC_DRIVERS.contains( writeDriver ) && StringUtils.isBlank( this.password )){
+            logger.warn( "connecting to " + name + " with blank password!");
+        }
+
+        this.properties.setProperty( "user", this.username );
+        this.properties.setProperty( USER, this.username );
+        this.properties.setProperty( PASSWORD, this.password );
+    }
+
+    public DataLake asDataLake() {
+        String lakeDataFormat = "";
+        String lakeDriver = "";
+        switch ( writeDriver ){
+            case S3_DRIVER:
+                lakeDriver = S3_DRIVER;
+                lakeDataFormat = dataFormat;
+                break;
+            case CSV_FORMAT:
+            case ORC_FORMAT:
+                lakeDriver = FILESYSTEM_DRIVER;
+                lakeDataFormat = writeDriver;
+                break;
+            case FILESYSTEM_DRIVER:
+                lakeDriver = FILESYSTEM_DRIVER;
+                lakeDataFormat = dataFormat;
+                break;
+            case LEGACY_CSV_FORMAT:
+                lakeDriver = FILESYSTEM_DRIVER;
+                lakeDataFormat = CSV_FORMAT;
+                break;
+            default: // JDBC
+                lakeDriver = writeDriver;
+                lakeDataFormat = writeDriver;
+                break;
+        }
+        return new DataLake(
+                name,
+                writeUrl,
+                lakeDriver,
+                lakeDataFormat,
+                username,
+                password,
+                false,
+                DEFAULT_DATA_CHUNK_SIZE,
+                batchSize,
+                writeMode,
+                false,
+                properties);
     }
 
     @JsonProperty( WRITE_DRIVER )

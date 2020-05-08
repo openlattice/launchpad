@@ -21,10 +21,10 @@
 
 package com.openlattice.launchpad;
 
+import com.openlattice.launchpad.configuration.DataLake;
 import com.openlattice.launchpad.configuration.IntegrationConfiguration;
 import com.openlattice.launchpad.configuration.IntegrationConfigurationTests;
 import com.openlattice.launchpad.configuration.IntegrationRunner;
-import com.openlattice.launchpad.configuration.LaunchpadDestination;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -38,8 +38,8 @@ public class LaunchPadTests {
     public void runAppendOnlyIntegration() throws IOException {
         IntegrationConfiguration integrationConfiguration = IntegrationConfigurationTests
                 .readAppendOnlyIntegrationConfiguration();
-        List<LaunchpadDestination> destinations = integrationConfiguration.getDestinations();
-        for ( LaunchpadDestination d : destinations ) {
+        List<DataLake> dataLakes = integrationConfiguration.getDatalakes().get();
+        for ( DataLake d : dataLakes ) {
             System.out.println( d.getName() + ": "  + d.getWriteMode());
         }
         IntegrationRunner.runIntegrations( integrationConfiguration  );

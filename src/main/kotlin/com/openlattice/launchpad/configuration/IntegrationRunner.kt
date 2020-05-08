@@ -22,19 +22,21 @@
 package com.openlattice.launchpad.configuration
 
 import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.Slf4jReporter
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
+import com.zaxxer.hikari.HikariDataSource
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
-import org.apache.spark.sql.*
+import org.apache.spark.sql.DataFrameWriter
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.time.Clock
 import java.time.OffsetDateTime
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -85,13 +87,23 @@ class IntegrationRunner {
         @JvmStatic
         fun runIntegrations(integrationConfiguration: IntegrationConfiguration) {
             val integrationsMap = integrationConfiguration.integrations
-            val datasources = integrationConfiguration.datasources.map { it.name to it }.toMap()
-            val destinations = integrationConfiguration.destinations.map { it.name to it }.toMap()
+            val sourcesConfig = integrationConfiguration.datasources.orElse(listOf())
+            val destsConfig = integrationConfiguration.destinations.orElse(listOf())
 
-            destinations.filter {
-                isJdbcDestination( it.value )
+            // map to lakes if needed. This will be removed once launchpads are upgraded
+            val lakes = if ( integrationConfiguration.datalakes.isEmpty ){
+                val newLakes = ArrayList<DataLake>()
+                destsConfig.forEach { newLakes.add(it.asDataLake()) }
+                sourcesConfig.forEach { newLakes.add(it.asDataLake()) }
+                newLakes
+            } else {
+                integrationConfiguration.datalakes.get()
+            }.map{ it.name to it }.toMap()
+
+            lakes.filter {
+                isRemoteLoggingLake( it.value )
             }.forEach { (_, destination) ->
-                destination.hikariDatasource.connection.use { conn ->
+                destination.getHikariDatasource().connection.use { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
                     }
@@ -100,17 +112,16 @@ class IntegrationRunner {
 
             val session = configureOrGetSparkSession(integrationConfiguration)
 
-            integrationsMap.forEach { (datasourceName, destinationsForDatasource) ->
-                val datasource = datasources.getValue(datasourceName)
-
-                Multimaps.asMap(destinationsForDatasource).forEach { (destinationName, integrations) ->
+            integrationsMap.forEach { sourceLakeName, destToIntegration ->
+                val sourceLake = lakes.getValue( sourceLakeName )
+                Multimaps.asMap(destToIntegration).forEach { destinationName, integrations ->
                     val extIntegrations = integrations.filter { !it.gluttony } + integrations
                             .filter { it.gluttony }
                             .flatMap { integration ->
 
-                                val destination = destinations.getValue(destinationName)
+                                val destLake = lakes.getValue(destinationName)
                                 BasePostgresIterable(
-                                        StatementHolderSupplier(destination.hikariDatasource, integration.source)
+                                        StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
                                 ) { rs ->
                                     Integration(
                                             rs.getString("description"),
@@ -121,16 +132,16 @@ class IntegrationRunner {
                             }
 
                     extIntegrations.forEach { integration ->
-                        val destination = destinations.getValue(destinationName)
+                        val destination = lakes.getValue(destinationName)
 
                         logger.info("Running integration: {}", integration)
                         val start = OffsetDateTime.now()
                         logStarted(integrationConfiguration.name, destination, integration, start)
                         val ds = try {
-                            logger.info("Transferring ${datasource.name} with query ${integration.source}")
-                            getSourceDataset(datasource, integration, session)
+                            logger.info("Transferring ${sourceLake.name} with query ${integration.source}")
+                            getSourceDataset(sourceLake, integration, session)
                         } catch (ex: Exception) {
-                            logFailed(datasourceName, destination, integration, start)
+                            logFailed(sourceLakeName, destination, integration, start)
                             logger.error(
                                     "Integration {} failed going from {} to {}. Exiting.",
                                     integrationConfiguration.name,
@@ -141,7 +152,7 @@ class IntegrationRunner {
 
                             kotlin.system.exitProcess(1)
                         }
-                        logger.info("Read from source: {}", datasource)
+                        logger.info("Read from source: {}", sourceLake)
                         //Only CSV and JDBC are tested.
 
                         val sparkWriter = when (destination.dataFormat) {
@@ -154,17 +165,17 @@ class IntegrationRunner {
                             else -> {
                                 ds.write()
                                         .option("batchsize", destination.batchSize.toLong())
-                                        .option("driver", destination.writeDriver)
+                                        .option("driver", destination.driver)
                                         .mode( destination.writeMode )
                                         .format("jdbc")
                             }
                         }
                         logger.info("Created spark writer")
                         val ctxt = timer.time()
-                        when (destination.writeDriver) {
-                            FILESYSTEM_DRIVER -> sparkWriter.save(destination.writeUrl)
+                        when (destination.driver) {
+                            FILESYSTEM_DRIVER -> sparkWriter.save(destination.url)
                             S3_DRIVER -> {
-                                sparkWriter.save(destination.writeUrl)
+                                sparkWriter.save("${destination.url}-${OffsetDateTime.now(Clock.systemUTC())}")
                             }
                             else -> toDatabase(integrationConfiguration.name, sparkWriter, destination, integration, start)
                         }
@@ -177,8 +188,8 @@ class IntegrationRunner {
             }
         }
 
-        private fun isJdbcDestination(destination: LaunchpadDestination ): Boolean {
-            return !NON_JDBC_DRIVERS.contains(destination.writeDriver)
+        private fun isRemoteLoggingLake(destination: DataLake): Boolean {
+            return destination.remoteLogger
         }
 
         @SuppressFBWarnings(
@@ -189,13 +200,13 @@ class IntegrationRunner {
         private fun toDatabase(
                 integrationName: String,
                 ds: DataFrameWriter<Row>,
-                destination: LaunchpadDestination,
+                destination: DataLake,
                 integration: Integration,
                 start: OffsetDateTime
         ) {
             try {
                 ds.jdbc(
-                        destination.writeUrl,
+                        destination.url,
                         integration.destination,
                         destination.properties
                 )
@@ -216,11 +227,11 @@ class IntegrationRunner {
 
         private fun logStarted(
                 integrationName: String,
-                destination: LaunchpadDestination,
+                destination: DataLake,
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isJdbcDestination( destination )){
+            if (!isRemoteLoggingLake( destination )){
                 logger.info("Starting integration $integrationName to ${destination.name}")
                 return
             }
@@ -241,11 +252,11 @@ class IntegrationRunner {
         private fun unsafeExecuteSql(
                 sql: String,
                 integrationName: String,
-                destination: LaunchpadDestination,
+                destination: DataLake,
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            destination.hikariDatasource.connection.use { connection ->
+            destination.getHikariDatasource().connection.use { connection ->
                 connection.prepareStatement(sql).use { ps ->
                     ps.setString(1, integrationName)
                     ps.setString(2, hostName)
@@ -258,11 +269,11 @@ class IntegrationRunner {
 
         private fun logSuccessful(
                 integrationName: String,
-                destination: LaunchpadDestination,
+                destination: DataLake,
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isJdbcDestination( destination )){
+            if (!isRemoteLoggingLake( destination )){
                 logger.info("Integration succeeded")
                 return
             }
@@ -281,11 +292,11 @@ class IntegrationRunner {
 
         private fun logFailed(
                 integrationName: String,
-                destination: LaunchpadDestination,
+                destination: DataLake,
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isJdbcDestination( destination )){
+            if (!isRemoteLoggingLake( destination )){
                 logger.info("Integration failed")
                 return
             }
@@ -303,11 +314,11 @@ class IntegrationRunner {
         }
 
         @JvmStatic
-        private fun getSourceDataset(datasource: LaunchpadDatasource, integration: Integration, sparkSession: SparkSession ): Dataset<Row> {
+        private fun getSourceDataset(datasource: DataLake, integration: Integration, sparkSession: SparkSession ): Dataset<Row> {
             when (datasource.driver) {
                 CSV_FORMAT, LEGACY_CSV_FORMAT  -> return sparkSession
                         .read()
-                        .option("header", datasource.isHeader)
+                        .option("header", datasource.header)
                         .option("inferSchema", true)
                         .csv(datasource.url + integration.source)
                 else -> return sparkSession

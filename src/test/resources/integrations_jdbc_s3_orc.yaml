@@ -4,22 +4,41 @@ awsClient:
   regionName: ""
   accessKeyId: ""
   secretAccessKey: ""
-datasources:
-  - name: remotedb
+dataLakes:
+  - name: db
     url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
     username: "example_user"
     password: "examplepassword"
     driver: org.postgresql.Driver
+    dataFormat: org.postgresql.Driver
+    header: false
+    writeMode: "Overwrite"
     fetchSize: 20000
-destinations:
+    batchSize: 20000
+    properties:
+      prop1: prop2
   - name: s3OrcFile
     url: "s3a://launchpad-test-bucket/jdbc-s3-orc-test/example_integration"
     driver: "s3"
     dataFormat: "orc"
+  - name: openLatticeStatus
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration_status?ssl=true&sslmode=require"
+    driver: org.postgresql.Driver
+#datasources:
+#  - name: remotedb
+#    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+#    username: "example_user"
+#    password: "examplepassword"
+#    driver: org.postgresql.Driver
+#    fetchSize: 20000
+#destinations:
+#  - name: s3OrcFile
+#    url: "s3a://launchpad-test-bucket/jdbc-s3-orc-test/example_integration"
+#    driver: "s3"
+#    dataFormat: "orc"
 integrations:
   remotedb:
     s3OrcFile:
       - source: "( select * from demo_health where \"GivenName\" = 'Jennifer') dh"
         destination: s3OrcFile
         description: "Some integration"
-

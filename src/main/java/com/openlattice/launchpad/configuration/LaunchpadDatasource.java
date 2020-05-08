@@ -21,9 +21,10 @@
 
 package com.openlattice.launchpad.configuration;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -32,10 +33,17 @@ import java.util.Properties;
 import static com.google.common.base.Preconditions.checkState;
 import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.CSV_FORMAT;
 import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.LEGACY_CSV_FORMAT;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_DATA_CHUNK_SIZE;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_WRITE_MODE;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.S3_DRIVER;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.FILESYSTEM_DRIVER;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.ORC_FORMAT;
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.UNKNOWN;
 
 /**
  * Represents a name for data integrations.
  */
+@Deprecated
 public class LaunchpadDatasource {
     private static final String NAME       = "name";
     private static final String URL        = "url";
@@ -45,6 +53,8 @@ public class LaunchpadDatasource {
     private static final String FETCH_SIZE = "fetchSize";
     private static final String HEADER     = "header";
 
+    private static final Logger logger = LoggerFactory.getLogger( LaunchpadDestination.class );
+
     private final String     name;
     private final String     url;
     private final String     driver;
@@ -52,7 +62,6 @@ public class LaunchpadDatasource {
     private final String     user;
     private final int        fetchSize;
     private final boolean    header;
-    private final Properties properties;
 
     public LaunchpadDatasource(
             @JsonProperty( NAME ) String name,
@@ -77,13 +86,49 @@ public class LaunchpadDatasource {
         }
         //Depending on server configuration a password may not be required to establish a connection.
         this.password = password.orElse( "" );
-        this.fetchSize = fetchSize.orElse( 20_000 );
-
-        properties = new Properties();
-        properties.setProperty( "user", this.user );
-        properties.setProperty( "password", this.password );
-        properties.setProperty( "driver", this.driver );
+        this.fetchSize = fetchSize.orElse( DEFAULT_DATA_CHUNK_SIZE );
         this.header = header.orElse( false );
+    }
+
+    public DataLake asDataLake() {
+        String lakeDataFormat = "";
+        String lakeDriver = "";
+        switch ( driver ){
+            case S3_DRIVER:
+                lakeDriver = S3_DRIVER;
+                lakeDataFormat = UNKNOWN;
+                break;
+            case CSV_FORMAT:
+            case ORC_FORMAT:
+                lakeDriver = FILESYSTEM_DRIVER;
+                lakeDataFormat = CSV_FORMAT;
+                break;
+            case FILESYSTEM_DRIVER:
+                lakeDriver = FILESYSTEM_DRIVER;
+                lakeDataFormat = UNKNOWN;
+                break;
+            case LEGACY_CSV_FORMAT:
+                lakeDriver = FILESYSTEM_DRIVER;
+                lakeDataFormat = CSV_FORMAT;
+                break;
+            default: // JDBC
+                lakeDriver = driver;
+                lakeDataFormat = driver;
+                break;
+        }
+        return new DataLake(
+                name,
+                url,
+                lakeDriver,
+                lakeDataFormat,
+                user,
+                password,
+                header,
+                fetchSize,
+                DEFAULT_DATA_CHUNK_SIZE,
+                DEFAULT_WRITE_MODE,
+                false,
+                new Properties());
     }
 
     @JsonProperty( HEADER )
@@ -121,11 +166,6 @@ public class LaunchpadDatasource {
         return password;
     }
 
-    @JsonIgnore
-    public Properties getProperties() {
-        return properties;
-    }
-
     @Override public boolean equals( Object o ) {
         if ( this == o ) { return true; }
         if ( !( o instanceof LaunchpadDatasource ) ) { return false; }
@@ -135,12 +175,11 @@ public class LaunchpadDatasource {
                 Objects.equals( url, that.url ) &&
                 Objects.equals( driver, that.driver ) &&
                 Objects.equals( password, that.password ) &&
-                Objects.equals( user, that.user ) &&
-                Objects.equals( properties, that.properties );
+                Objects.equals( user, that.user );
     }
 
     @Override public int hashCode() {
-        return Objects.hash( name, url, driver, password, user, fetchSize, properties );
+        return Objects.hash( name, url, driver, password, user, fetchSize);
     }
 
     @Override public String toString() {
@@ -151,7 +190,6 @@ public class LaunchpadDatasource {
                 ", password='" + password + '\'' +
                 ", user='" + user + '\'' +
                 ", fetchSize=" + fetchSize +
-                ", properties=" + properties +
                 '}';
     }
 }
