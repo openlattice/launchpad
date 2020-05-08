@@ -22,7 +22,8 @@
 package com.openlattice.launchpad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,29 +31,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.CSV_FORMAT;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.LEGACY_CSV_FORMAT;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_DATA_CHUNK_SIZE;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_WRITE_MODE;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.S3_DRIVER;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.FILESYSTEM_DRIVER;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.ORC_FORMAT;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.UNKNOWN;
+import static com.openlattice.launchpad.configuration.Constants.*;
 
 /**
  * Represents a name for data integrations.
  */
 @Deprecated
 public class LaunchpadDatasource {
-    private static final String NAME       = "name";
-    private static final String URL        = "url";
-    private static final String DRIVER     = "driver";
-    private static final String USER       = "username";
-    private static final String PASSWORD   = "password";
-    private static final String FETCH_SIZE = "fetchSize";
-    private static final String HEADER     = "header";
-
     private static final Logger logger = LoggerFactory.getLogger( LaunchpadDestination.class );
 
     private final String     name;
@@ -67,27 +52,30 @@ public class LaunchpadDatasource {
             @JsonProperty( NAME ) String name,
             @JsonProperty( URL ) String url,
             @JsonProperty( DRIVER ) String driver,
-            @JsonProperty( USER ) Optional<String> user,
+            @JsonProperty( USERNAME ) Optional<String> user,
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize,
             @JsonProperty( HEADER ) Optional<Boolean> header ) {
-        checkState( header.map( hasHeader ->
-                        !hasHeader || ( hasHeader && (CSV_FORMAT.equals( driver ) || LEGACY_CSV_FORMAT.equals( driver )))
-                ).orElse( true ), "header can only be set for csv" );
         this.name = name;
         this.url = url;
         this.driver = driver;
-        if ( !StringUtils.equals( CSV_FORMAT, driver ) && !StringUtils.equals( LEGACY_CSV_FORMAT, driver )) {
-            this.user = user.orElseThrow( () ->
-                    new IllegalStateException("A username must be specified for database connections." ) );
-        } else {
-            //User can be blank for CSV.
-            this.user = "";
-        }
+        this.header = header.orElse( false );
+
         //Depending on server configuration a password may not be required to establish a connection.
         this.password = password.orElse( "" );
         this.fetchSize = fetchSize.orElse( DEFAULT_DATA_CHUNK_SIZE );
-        this.header = header.orElse( false );
+
+        // JDBC datasource
+        if ( !NON_JDBC_DRIVERS.contains( driver ) ){
+            Preconditions.checkState( user.isPresent() && !user.get().isBlank(),
+                    "A username must be specified for database connections.");
+            if ( StringUtils.isBlank( this.password )){
+                logger.warn( "connecting to " + name + " with blank password!");
+            }
+        }
+
+        //User can be blank for non-jdbc sources.
+        this.user = user.orElse( "" );
     }
 
     public DataLake asDataLake() {

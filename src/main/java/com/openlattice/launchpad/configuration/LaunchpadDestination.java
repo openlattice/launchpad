@@ -34,32 +34,14 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.CSV_FORMAT;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.LEGACY_CSV_FORMAT;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_DATA_CHUNK_SIZE;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.DEFAULT_WRITE_MODE;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.S3_DRIVER;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.FILESYSTEM_DRIVER;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.ORC_FORMAT;
-import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.NON_JDBC_DRIVERS;
+
+import static com.openlattice.launchpad.configuration.Constants.*;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 @Deprecated
 public class LaunchpadDestination {
-    private static final String NAME                = "name";
-    private static final String JDBC_URL            ="jdbcUrl";
-    private static final String MAXIMUM_POOL_SIZE   = "maximumPoolSize";
-    private static final String CONNECTION_TIMEOUT  = "connectionTimeout";
-    private static final String WRITE_URL           = "url";
-    private static final String WRITE_DRIVER        = "driver";
-    private static final String WRITE_MODE          = "writeMode";
-    private static final String USER                = "username";
-    private static final String PASSWORD            = "password";
-    private static final String DATA_FORMAT         = "dataFormat";
-    private static final String PROPERTIES          = "properties";
-    private static final String BATCH_SIZE          = "batchSize";
 
     private static final Logger      logger = LoggerFactory.getLogger( LaunchpadDestination.class );
 
@@ -75,11 +57,11 @@ public class LaunchpadDestination {
 
     public LaunchpadDestination(
             @JsonProperty( NAME ) String name,
-            @JsonProperty( WRITE_URL ) String writeUrl,
-            @JsonProperty( WRITE_DRIVER ) String writeDriver,
+            @JsonProperty( URL ) String writeUrl,
+            @JsonProperty( DRIVER ) String writeDriver,
             @JsonProperty( DATA_FORMAT ) Optional<String> dataFormat,
             @JsonProperty( WRITE_MODE ) Optional<String> writeMode,
-            @JsonProperty( USER ) Optional<String> username,
+            @JsonProperty( USERNAME ) Optional<String> username,
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( PROPERTIES ) Optional<Properties> properties,
             @JsonProperty( BATCH_SIZE ) Optional<Integer> batchSize ) {
@@ -93,23 +75,21 @@ public class LaunchpadDestination {
         this.properties = properties.orElse( new Properties() );
         this.writeMode = SaveMode.valueOf( writeMode.orElse( DEFAULT_WRITE_MODE.name()));
 
-        this.properties.put(JDBC_URL, writeUrl);
-        this.properties.put(MAXIMUM_POOL_SIZE, "1");
-        this.properties.put(CONNECTION_TIMEOUT, "120000"); //2-minute connection timeout
-
         this.username = username.orElse( "" );
         this.password = password.orElse( "" );
 
-        if ( !NON_JDBC_DRIVERS.contains( writeDriver ) && StringUtils.isBlank( this.username )){
-            logger.warn( "connecting to " + name + " with blank username!");
+        // JDBC datasource
+        if ( !NON_JDBC_DRIVERS.contains( writeDriver ) ){
+            if ( StringUtils.isBlank( this.password )){
+                logger.warn( "connecting to " + name + " with blank password!");
+            }
+            this.properties.put(JDBC_URL, writeUrl);
+            this.properties.put(MAXIMUM_POOL_SIZE, "1");
+            this.properties.put(CONNECTION_TIMEOUT, "120000"); //2-minute connection timeout
+            this.properties.setProperty( USER, this.username );
+            this.properties.setProperty( USERNAME, this.username );
+            this.properties.setProperty( PASSWORD, this.password );
         }
-        if ( !NON_JDBC_DRIVERS.contains( writeDriver ) && StringUtils.isBlank( this.password )){
-            logger.warn( "connecting to " + name + " with blank password!");
-        }
-
-        this.properties.setProperty( "user", this.username );
-        this.properties.setProperty( USER, this.username );
-        this.properties.setProperty( PASSWORD, this.password );
     }
 
     public DataLake asDataLake() {
@@ -153,8 +133,8 @@ public class LaunchpadDestination {
                 properties);
     }
 
-    @JsonProperty( WRITE_DRIVER )
-    public String getWriteDriver() {
+    @JsonProperty( DRIVER )
+    public String getDriver() {
         return writeDriver;
     }
 
@@ -163,8 +143,8 @@ public class LaunchpadDestination {
         return dataFormat;
     }
 
-    @JsonProperty( WRITE_URL )
-    public String getWriteUrl() {
+    @JsonProperty( URL )
+    public String getUrl() {
         return writeUrl;
     }
 

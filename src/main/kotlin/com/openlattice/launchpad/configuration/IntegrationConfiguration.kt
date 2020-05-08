@@ -25,7 +25,25 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.base.Preconditions
 import com.google.common.collect.ListMultimap
-import com.google.common.collect.Sets
+import com.openlattice.launchpad.configuration.Constants.BATCH_SIZE
+import com.openlattice.launchpad.configuration.Constants.DATA_FORMAT
+import com.openlattice.launchpad.configuration.Constants.DEFAULT_DATA_CHUNK_SIZE
+import com.openlattice.launchpad.configuration.Constants.DEFAULT_WRITE_MODE
+import com.openlattice.launchpad.configuration.Constants.DESCRIPTION
+import com.openlattice.launchpad.configuration.Constants.DESTINATION
+import com.openlattice.launchpad.configuration.Constants.DRIVER
+import com.openlattice.launchpad.configuration.Constants.FETCH_SIZE
+import com.openlattice.launchpad.configuration.Constants.FILESYSTEM_DRIVER
+import com.openlattice.launchpad.configuration.Constants.HEADER
+import com.openlattice.launchpad.configuration.Constants.NAME
+import com.openlattice.launchpad.configuration.Constants.PASSWORD
+import com.openlattice.launchpad.configuration.Constants.PROPERTIES
+import com.openlattice.launchpad.configuration.Constants.S3_DRIVER
+import com.openlattice.launchpad.configuration.Constants.SOURCE
+import com.openlattice.launchpad.configuration.Constants.URL
+import com.openlattice.launchpad.configuration.Constants.USER
+import com.openlattice.launchpad.configuration.Constants.USERNAME
+import com.openlattice.launchpad.configuration.Constants.WRITE_MODE
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.apache.commons.lang.StringUtils
@@ -38,43 +56,6 @@ private const val DESTINATIONS      = "destinations"
 private const val INTEGRATIONS      = "integrations"
 private const val AWS_CLIENT        = "awsClient"
 private const val DATA_LAKES        = "datalakes"
-
-const val URL            = "url"
-const val NAME           = "name"
-const val USER           = "user"
-const val USERNAME       = "username"
-const val DRIVER         = "driver"
-const val PASSWORD       = "password"
-const val PROPERTIES     = "properties"
-const val WRITE_MODE     = "writeMode"
-const val BATCH_SIZE     = "batchSize"
-const val FETCH_SIZE     = "fetchSize"
-const val DATA_FORMAT    = "dataFormat"
-const val DESCRIPTION    = "description"
-const val DESTINATION    = "destination"
-const val SOURCE            = "source"
-
-// ported from old classes
-const val HEADER             = "header"
-const val JDBC_URL           = "jdbcUrl"
-const val MAXIMUM_POOL_SIZE  = "maximumPoolSize"
-const val CONNECTION_TIMEOUT = "connectionTimeout"
-
-const val LEGACY_CSV_FORMAT         = "com.openlattice.launchpad.csv"
-const val CSV_FORMAT                = "csv"
-const val ORC_FORMAT                = "orc"
-const val FILESYSTEM_DRIVER         = "filesystem"
-const val S3_DRIVER                 = "s3"
-const val UNKNOWN                   = "unknown"
-
-
-const val DEFAULT_DATA_CHUNK_SIZE   = 20_000
-
-@JvmField
-val DEFAULT_WRITE_MODE = SaveMode.Overwrite
-
-@JvmField
-val NON_JDBC_DRIVERS: Set<String>   = Sets.newHashSet(S3_DRIVER, FILESYSTEM_DRIVER)
 
 /**
  *
@@ -129,7 +110,7 @@ data class DataLake(
         @JsonProperty(FETCH_SIZE) val fetchSize: Int = DEFAULT_DATA_CHUNK_SIZE,
         @JsonProperty(BATCH_SIZE) val batchSize: Int = DEFAULT_DATA_CHUNK_SIZE,
         @JsonProperty(WRITE_MODE) val writeMode: SaveMode = DEFAULT_WRITE_MODE,
-        @JsonProperty("remoteLogging") val remoteLogger: Boolean = false,
+        @JsonProperty("latticeLogger") val latticeLogger: Boolean = false,
         @JsonProperty(PROPERTIES) val properties: Properties = Properties()
 ) {
     companion object  {

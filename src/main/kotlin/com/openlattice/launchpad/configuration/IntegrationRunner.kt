@@ -24,9 +24,13 @@ package com.openlattice.launchpad.configuration
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
+import com.openlattice.launchpad.configuration.Constants.CSV_FORMAT
+import com.openlattice.launchpad.configuration.Constants.FILESYSTEM_DRIVER
+import com.openlattice.launchpad.configuration.Constants.LEGACY_CSV_FORMAT
+import com.openlattice.launchpad.configuration.Constants.ORC_FORMAT
+import com.openlattice.launchpad.configuration.Constants.S3_DRIVER
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
-import com.zaxxer.hikari.HikariDataSource
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.apache.spark.sql.DataFrameWriter
 import org.apache.spark.sql.Dataset
@@ -101,7 +105,7 @@ class IntegrationRunner {
             }.map{ it.name to it }.toMap()
 
             lakes.filter {
-                isRemoteLoggingLake( it.value )
+                isLatticeLoggingLake( it.value )
             }.forEach { (_, destination) ->
                 destination.getHikariDatasource().connection.use { conn ->
                     conn.createStatement().use { stmt ->
@@ -188,8 +192,8 @@ class IntegrationRunner {
             }
         }
 
-        private fun isRemoteLoggingLake(destination: DataLake): Boolean {
-            return destination.remoteLogger
+        private fun isLatticeLoggingLake(destination: DataLake): Boolean {
+            return destination.latticeLogger
         }
 
         @SuppressFBWarnings(
@@ -231,7 +235,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isRemoteLoggingLake( destination )){
+            if (!isLatticeLoggingLake( destination )){
                 logger.info("Starting integration $integrationName to ${destination.name}")
                 return
             }
@@ -273,7 +277,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isRemoteLoggingLake( destination )){
+            if (!isLatticeLoggingLake( destination )){
                 logger.info("Integration succeeded")
                 return
             }
@@ -296,7 +300,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isRemoteLoggingLake( destination )){
+            if (!isLatticeLoggingLake( destination )){
                 logger.info("Integration failed")
                 return
             }
