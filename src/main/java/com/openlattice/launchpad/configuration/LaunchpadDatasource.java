@@ -44,7 +44,7 @@ public class LaunchpadDatasource {
     private final String     url;
     private final String     driver;
     private final String     password;
-    private final String     user;
+    private final String     username;
     private final int        fetchSize;
     private final boolean    header;
 
@@ -52,7 +52,7 @@ public class LaunchpadDatasource {
             @JsonProperty( NAME ) String name,
             @JsonProperty( URL ) String url,
             @JsonProperty( DRIVER ) String driver,
-            @JsonProperty( USERNAME ) Optional<String> user,
+            @JsonProperty( USERNAME ) Optional<String> username,
             @JsonProperty( PASSWORD ) Optional<String> password,
             @JsonProperty( FETCH_SIZE ) Optional<Integer> fetchSize,
             @JsonProperty( HEADER ) Optional<Boolean> header ) {
@@ -67,7 +67,7 @@ public class LaunchpadDatasource {
 
         // JDBC datasource
         if ( !NON_JDBC_DRIVERS.contains( driver ) ){
-            Preconditions.checkState( user.isPresent() && !user.get().isBlank(),
+            Preconditions.checkState( username.isPresent() && !username.get().isBlank(),
                     "A username must be specified for database connections.");
             if ( StringUtils.isBlank( this.password )){
                 logger.warn( "connecting to " + name + " with blank password!");
@@ -75,7 +75,7 @@ public class LaunchpadDatasource {
         }
 
         //User can be blank for non-jdbc sources.
-        this.user = user.orElse( "" );
+        this.username = username.orElse( "" );
     }
 
     public DataLake asDataLake() {
@@ -109,7 +109,7 @@ public class LaunchpadDatasource {
                 url,
                 lakeDriver,
                 lakeDataFormat,
-                user,
+                username,
                 password,
                 header,
                 fetchSize,
@@ -144,9 +144,9 @@ public class LaunchpadDatasource {
         return driver;
     }
 
-    @JsonProperty( USER )
+    @JsonProperty( USERNAME )
     public String getUser() {
-        return user;
+        return username;
     }
 
     @JsonProperty( PASSWORD )
@@ -163,11 +163,11 @@ public class LaunchpadDatasource {
                 Objects.equals( url, that.url ) &&
                 Objects.equals( driver, that.driver ) &&
                 Objects.equals( password, that.password ) &&
-                Objects.equals( user, that.user );
+                Objects.equals( username, that.username );
     }
 
     @Override public int hashCode() {
-        return Objects.hash( name, url, driver, password, user, fetchSize);
+        return Objects.hash( name, url, driver, password, username, fetchSize);
     }
 
     @Override public String toString() {
@@ -176,7 +176,7 @@ public class LaunchpadDatasource {
                 ", url='" + url + '\'' +
                 ", driver='" + driver + '\'' +
                 ", password='" + password + '\'' +
-                ", user='" + user + '\'' +
+                ", username='" + username + '\'' +
                 ", fetchSize=" + fetchSize +
                 '}';
     }

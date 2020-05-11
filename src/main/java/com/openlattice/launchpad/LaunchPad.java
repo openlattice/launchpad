@@ -1,10 +1,6 @@
 package com.openlattice.launchpad;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.openlattice.launchpad.configuration.DataLake;
@@ -12,6 +8,7 @@ import com.openlattice.launchpad.configuration.IntegrationConfiguration;
 import com.openlattice.launchpad.configuration.IntegrationRunner;
 import com.openlattice.launchpad.configuration.LaunchpadDatasource;
 import com.openlattice.launchpad.configuration.LaunchpadDestination;
+import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
@@ -29,7 +26,7 @@ import java.util.Optional;
  */
 @SuppressFBWarnings(value = "SECPTI", justification = "User input for file is considered trusted.")
 public class LaunchPad {
-    private static final ObjectMapper mapper            = createYamlMapper();
+    private static final ObjectMapper mapper            = JacksonSerializationConfiguration.yamlMapper;
 
     private static final Logger logger = LoggerFactory.getLogger( LaunchPad.class );
 
@@ -79,14 +76,6 @@ public class LaunchPad {
         }
 
         IntegrationRunner.runIntegrations( config );
-    }
-
-    protected static ObjectMapper createYamlMapper() {
-        ObjectMapper yamlMapper = new ObjectMapper( new YAMLFactory() );
-        yamlMapper.registerModule( new Jdk8Module() );
-        yamlMapper.registerModule( new GuavaModule() );
-        yamlMapper.registerModule( new AfterburnerModule() );
-        return yamlMapper;
     }
 }
 

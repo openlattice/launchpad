@@ -25,6 +25,7 @@ object Constants  {
     const val JDBC_URL = "jdbcUrl"
     const val MAXIMUM_POOL_SIZE = "maximumPoolSize"
     const val CONNECTION_TIMEOUT = "connectionTimeout"
+    const val LATTICE_LOGGER = "latticeLogger"
 
     const val LEGACY_CSV_FORMAT = "com.openlattice.launchpad.csv"
     const val CSV_FORMAT = "csv"

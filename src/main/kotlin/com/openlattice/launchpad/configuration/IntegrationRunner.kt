@@ -157,7 +157,6 @@ class IntegrationRunner {
                             kotlin.system.exitProcess(1)
                         }
                         logger.info("Read from source: {}", sourceLake)
-                        //Only CSV and JDBC are tested.
 
                         val sparkWriter = when (destination.dataFormat) {
                             CSV_FORMAT, LEGACY_CSV_FORMAT -> {
@@ -174,7 +173,7 @@ class IntegrationRunner {
                                         .format("jdbc")
                             }
                         }
-                        logger.info("Created spark writer")
+                        logger.info("Created spark writer for destination: {}", destination)
                         val ctxt = timer.time()
                         when (destination.driver) {
                             FILESYSTEM_DRIVER -> sparkWriter.save(destination.url)
@@ -330,7 +329,7 @@ class IntegrationRunner {
                         .format("jdbc")
                         .option("url", datasource.url)
                         .option("dbtable", integration.source)
-                        .option("user", datasource.user)
+                        .option("user", datasource.username)
                         .option("password", datasource.password)
                         .option("driver", datasource.driver)
                         .option("fetchSize", datasource.fetchSize.toLong())

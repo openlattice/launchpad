@@ -22,12 +22,7 @@
 package com.openlattice.launchpad;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -35,12 +30,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.function.Consumer;
 
 public abstract class AbstractJacksonSerializationTest<T> {
-    protected static final ObjectMapper mapper = createJsonMapper();
-    protected static final ObjectMapper smile  = createSmileMapper();
-    protected static final ObjectMapper yaml   = createYamlMapper();
+    protected static final ObjectMapper mapper = JacksonSerializationConfiguration.mapper;
+    protected static final ObjectMapper smile  = JacksonSerializationConfiguration.smileMapper;
+    protected static final ObjectMapper yaml   = JacksonSerializationConfiguration.yamlMapper;
     protected final        Logger       logger = LoggerFactory.getLogger( getClass() );
 
     @Test
@@ -63,38 +57,6 @@ public abstract class AbstractJacksonSerializationTest<T> {
     protected abstract T getSampleData();
 
     protected abstract Class<T> getClazz();
-
-    protected static ObjectMapper createYamlMapper() {
-        ObjectMapper yamlMapper = new ObjectMapper( new YAMLFactory() );
-        yamlMapper.registerModule( new Jdk8Module() );
-        yamlMapper.registerModule( new GuavaModule() );
-        yamlMapper.registerModule( new AfterburnerModule() );
-        yamlMapper.registerModule( new JodaModule() );
-        return yamlMapper;
-    }
-
-    protected static ObjectMapper createSmileMapper() {
-        ObjectMapper smileMapper = new ObjectMapper( new SmileFactory() );
-        smileMapper.registerModule( new Jdk8Module() );
-        smileMapper.registerModule( new GuavaModule() );
-        smileMapper.registerModule( new AfterburnerModule() );
-        smileMapper.registerModule( new JodaModule() );
-        return smileMapper;
-    }
-
-    protected static ObjectMapper createJsonMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule( new Jdk8Module() );
-        mapper.registerModule( new GuavaModule() );
-        mapper.registerModule( new JodaModule() );
-        mapper.registerModule( new AfterburnerModule() );
-        return mapper;
-    }
-
-    protected static void registerModule( Consumer<ObjectMapper> c ) {
-        c.accept( mapper );
-        c.accept( smile );
-    }
 
     protected static class SerializationResult<T> {
         private final String jsonString;
