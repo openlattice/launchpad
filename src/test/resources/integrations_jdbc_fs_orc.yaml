@@ -9,7 +9,7 @@ datasources:
     fetchSize: 20000
 destinations:
   - name: orcFile
-    url: "/tmp/orc-integ-test.orc"
+    url: "/tmp/orc-integ-test"
     driver: "filesystem"
     dataFormat: "orc"
 integrations:

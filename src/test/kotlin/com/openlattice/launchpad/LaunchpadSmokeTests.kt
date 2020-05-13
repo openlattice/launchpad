@@ -7,6 +7,7 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import java.io.IOException
+import java.nio.file.Paths
 
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
@@ -36,6 +37,9 @@ class LaunchpadSmokeTests {
                             Constants.FILESYSTEM_DRIVER -> {
                                 // fs => delete dest file/folder
                                 println("deleting file/folder from fs at ${destination.url}/$path")
+                                if ( !Paths.get("${destination.url}/$path").toFile().deleteRecursively() ) {
+                                    println("failed to delete file/folder from fs at ${destination.url}/$path")
+                                }
                             }
                             Constants.S3_DRIVER -> {
                                 // s3 => delete dest file/folder
