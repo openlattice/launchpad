@@ -91,7 +91,7 @@ class IntegrationRunner {
             val destsConfig = integrationConfiguration.destinations.orElse(listOf())
 
             // map to lakes if needed. This will be removed once launchpads are upgraded
-            return if ( integrationConfiguration.datalakes.isEmpty ){
+            return if ( !integrationConfiguration.datalakes.isPresent ){
                 val newLakes = ArrayList<DataLake>()
                 destsConfig.forEach { newLakes.add(it.asDataLake()) }
                 sourcesConfig.forEach { newLakes.add(it.asDataLake()) }

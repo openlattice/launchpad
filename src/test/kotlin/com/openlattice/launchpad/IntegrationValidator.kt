@@ -2,7 +2,10 @@ package com.openlattice.launchpad
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.collect.Multimaps
-import com.openlattice.launchpad.configuration.*
+import com.openlattice.launchpad.configuration.Integration
+import com.openlattice.launchpad.configuration.IntegrationConfiguration
+import com.openlattice.launchpad.configuration.IntegrationRunner
+import com.openlattice.launchpad.configuration.IntegrationTables
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
 import org.junit.Assert
@@ -21,18 +24,9 @@ class IntegrationValidator {
 
         fun validateIntegration(integrationConfiguration: IntegrationConfiguration, integrationPaths: Map<String, Map<String, List<String>>>, vararg sortColumns: String ) {
             val integrationsMap = integrationConfiguration.integrations
-            val sourcesConfig = integrationConfiguration.datasources.orElse(listOf())
-            val destsConfig = integrationConfiguration.destinations.orElse(listOf())
 
-            // map to lakes if needed. This will be removed once launchpads are upgraded
-            val lakes = if ( integrationConfiguration.datalakes.isEmpty ){
-                val newLakes = ArrayList<DataLake>()
-                destsConfig.forEach { newLakes.add(it.asDataLake()) }
-                sourcesConfig.forEach { newLakes.add(it.asDataLake()) }
-                newLakes
-            } else {
-                integrationConfiguration.datalakes.get()
-            }.map{ it.name to it }.toMap()
+            // map to lakes if needed. This should be removed once launchpads are upgraded
+            val lakes = IntegrationRunner.convertToDataLakesIfPresent(integrationConfiguration)
 
             lakes.filter {
                 it.value.latticeLogger
