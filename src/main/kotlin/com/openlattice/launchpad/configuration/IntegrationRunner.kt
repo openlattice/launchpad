@@ -72,6 +72,8 @@ class IntegrationRunner {
                     .appName("integration")
             if ( integrationConfiguration.awsConfig.isPresent ){
                 val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
+                println("${config.awsAccessKeyId}")
+                println("${config.awsSecretKey}")
                 val manualConfig = integrationConfiguration.awsConfig.get()
                 session
                         .config("fs.s3a.access.key", config.awsAccessKeyId)
