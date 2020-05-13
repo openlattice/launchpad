@@ -129,15 +129,10 @@ data class DataLake(
 
     init {
         Preconditions.checkState(StringUtils.isNotBlank(name), "Name must not be blank.")
+        logger.debug("Created data lake with driver: $driver, using $dataFormat format")
         when( driver ) {
-            FILESYSTEM_DRIVER -> {
-                logger.info("$driver")
-            }
-            S3_DRIVER -> {
-                logger.info("$driver")
-            }
+            FILESYSTEM_DRIVER, S3_DRIVER  -> {}
             else -> {
-                logger.info("$driver")
                 Preconditions.checkState(StringUtils.isNotBlank(username), "Username cannot be blank for database connections.")
                 if ( password == "" ){
                     logger.warn("Connecting to $name with a blank password.")

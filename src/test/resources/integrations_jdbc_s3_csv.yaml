@@ -1,7 +1,7 @@
 name: "example_jdbc_to_s3_csv"
 description: "Copying over data from local table into .csv file in s3"
-awsClient:
-  regionName: ""
+awsConfig:
+  regionName: "us-gov-west-1"
   accessKeyId: ""
   secretAccessKey: ""
 datasources:
