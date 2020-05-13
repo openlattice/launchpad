@@ -67,7 +67,7 @@ public class LaunchpadDatasource {
 
         // JDBC datasource
         if ( !NON_JDBC_DRIVERS.contains( driver ) ){
-            Preconditions.checkState( username.isPresent() && !username.get().isBlank(),
+            Preconditions.checkState( username.isPresent() && !StringUtils.isBlank( username.get() ),
                     "A username must be specified for database connections.");
             if ( StringUtils.isBlank( this.password )){
                 logger.warn( "connecting to " + name + " with blank password!");
