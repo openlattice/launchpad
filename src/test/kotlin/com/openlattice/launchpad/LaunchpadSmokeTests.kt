@@ -1,7 +1,6 @@
 package com.openlattice.launchpad
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.openlattice.launchpad.configuration.Constants
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
@@ -47,13 +46,9 @@ class LaunchpadSmokeTests {
                             }
                             Constants.S3_DRIVER -> {
                                 // s3 => delete dest file/folder
-                                val awsS3Config = config.awsConfig.get()
-                                val credsProvider = AWSStaticCredentialsProvider(
-                                        BasicAWSCredentials(awsS3Config.accessKeyId, awsS3Config.secretAccessKey))
-                               //InstanceProfileCredentialsProvider.createAsyncRefreshingProvider(true)
                                 val s3Client = AmazonS3ClientBuilder.standard()
-                                        .withRegion(awsS3Config.regionName)
-                                        .withCredentials(credsProvider)
+                                        .withRegion(config.awsConfig.get().regionName)
+                                        .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
                                         .build()
 
                                 val parts = URI(destination.url).schemeSpecificPart.split('/').iterator()
@@ -68,6 +63,7 @@ class LaunchpadSmokeTests {
                                     rest.append('/')
                                 }
                                 rest.append(path)
+                                rest.append('/')
                                 println("deleting from bucket: $bucket key: ${rest.toString()}")
                                 try {
                                     s3Client.deleteObject(bucket, rest.toString())

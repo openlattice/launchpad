@@ -21,6 +21,7 @@
 
 package com.openlattice.launchpad.configuration
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
@@ -70,11 +71,12 @@ class IntegrationRunner {
                     .master("local[${Runtime.getRuntime().availableProcessors()}]")
                     .appName("integration")
             if ( integrationConfiguration.awsConfig.isPresent ){
-                val config = integrationConfiguration.awsConfig.get()
+                val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
+                val manualConfig = integrationConfiguration.awsConfig.get()
                 session
-                        .config("fs.s3a.access.key", config.accessKeyId )
-                        .config("fs.s3a.secret.key", config.secretAccessKey )
-                        .config("fs.s3a.endpoint", "s3.${config.regionName}.amazonaws.com")
+                        .config("fs.s3a.access.key", config.awsAccessKeyId)
+                        .config("fs.s3a.secret.key", config.awsSecretKey)
+                        .config("fs.s3a.endpoint", "s3.${manualConfig.regionName}.amazonaws.com")
                         .config("spark.hadoop.fs.s3a.multiobjectdelete.enable","false")
                         .config("spark.hadoop.fs.s3a.fast.upload","true")
                         .config("spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version", "2")
@@ -133,7 +135,6 @@ class IntegrationRunner {
                     val extIntegrations = integrations.filter { !it.gluttony } + integrations
                             .filter { it.gluttony }
                             .flatMap { integration ->
-
                                 val destLake = lakes.getValue(destinationName)
                                 BasePostgresIterable(
                                         StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
