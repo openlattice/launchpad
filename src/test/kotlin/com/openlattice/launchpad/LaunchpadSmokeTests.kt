@@ -1,5 +1,8 @@
 package com.openlattice.launchpad
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.openlattice.launchpad.configuration.Constants
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
 import com.openlattice.launchpad.configuration.IntegrationRunner
@@ -7,6 +10,7 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import java.io.IOException
+import java.net.URI
 import java.nio.file.Paths
 
 /**
@@ -43,11 +47,41 @@ class LaunchpadSmokeTests {
                             }
                             Constants.S3_DRIVER -> {
                                 // s3 => delete dest file/folder
-                                println("deleting file/folder from s3 at ${destination.url}/$path")
+                                val awsS3Config = config.awsConfig.get()
+                                val credsProvider = AWSStaticCredentialsProvider(
+                                        BasicAWSCredentials(awsS3Config.accessKeyId, awsS3Config.secretAccessKey))
+                               //InstanceProfileCredentialsProvider.createAsyncRefreshingProvider(true)
+                                val s3Client = AmazonS3ClientBuilder.standard()
+                                        .withRegion(awsS3Config.regionName)
+                                        .withCredentials(credsProvider)
+                                        .build()
+
+                                val parts = URI(destination.url).schemeSpecificPart.split('/').iterator()
+                                var partsNxt = parts.next()
+                                while ( partsNxt.isBlank() ){
+                                    partsNxt = parts.next()
+                                }
+                                val bucket = partsNxt
+                                val rest = StringBuilder()
+                                while (parts.hasNext()) {
+                                    rest.append(parts.next())
+                                    rest.append('/')
+                                }
+                                rest.append(path)
+                                println("deleting from bucket: $bucket key: ${rest.toString()}")
+                                try {
+                                    s3Client.deleteObject(bucket, rest.toString())
+                                } catch ( ex: Exception ) {
+                                    ex.printStackTrace()
+                                }
                             }
                             else -> {
                                 // jdbc => drop dest table
+                                val hds = destination.getHikariDatasource()
                                 println("dropping table from ${destination.url}/$path")
+                                hds.connection.use { conn ->
+                                    conn.createStatement().execute("DROP TABLE $path;")
+                                }
                             }
                         }
                     }
