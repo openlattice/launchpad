@@ -19,6 +19,6 @@ destinations:
 integrations:
   remotedb:
     s3CsvFile:
-      - source: "( select * from demo_health where \"GivenName\" = 'Jennifer') dh"
+      - source: "demo_justice"
         destination: s3CsvFile
         description: "Some integration"

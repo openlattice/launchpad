@@ -51,23 +51,7 @@ public class LaunchPad {
 
         Optional<List<DataLake>> currentLakes = config.getDatalakes();
         if ( !currentLakes.isPresent() || ( currentLakes.isPresent() && currentLakes.get().isEmpty() )) {
-            List<DataLake> lakes = Lists.newArrayList();
-            for ( LaunchpadDatasource source : config.getDatasources().get()){
-                lakes.add(source.asDataLake());
-            }
-            for ( LaunchpadDestination dest : config.getDestinations().get()){
-                lakes.add(dest.asDataLake());
-            }
-            IntegrationConfiguration newConfig = new IntegrationConfiguration(
-                config.getName(),
-                config.getDescription(),
-                config.getAwsConfig(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(lakes),
-                config.getIntegrations()
-            );
-
+            IntegrationConfiguration newConfig = convertToDataLakes( config );
             String newJson = mapper.writeValueAsString( newConfig );
             System.out.println("Please replace your current yaml configuration file with the below yaml:");
             System.out.println(newJson);
@@ -76,6 +60,30 @@ public class LaunchPad {
         }
 
         IntegrationRunner.runIntegrations( config );
+    }
+
+    public static IntegrationConfiguration convertToDataLakes( IntegrationConfiguration config ) {
+        Optional<List<DataLake>> currentLakes = config.getDatalakes();
+        if ( !currentLakes.isPresent() || ( currentLakes.isPresent() && currentLakes.get().isEmpty() )) {
+            List<DataLake> lakes = Lists.newArrayList();
+            for ( LaunchpadDatasource source : config.getDatasources().get()){
+                lakes.add(source.asDataLake());
+            }
+            for ( LaunchpadDestination dest : config.getDestinations().get()){
+                lakes.add(dest.asDataLake());
+            }
+            IntegrationConfiguration newConfig = new IntegrationConfiguration(
+                    config.getName(),
+                    config.getDescription(),
+                    config.getAwsConfig(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(lakes),
+                    config.getIntegrations()
+            );
+            return newConfig;
+        }
+        return config;
     }
 }
 

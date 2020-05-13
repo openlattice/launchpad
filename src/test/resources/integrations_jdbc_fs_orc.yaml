@@ -15,6 +15,6 @@ destinations:
 integrations:
   remotedb:
     orcFile:
-      - source: "( select * from demo_health where \"GivenName\" = 'Jennifer') dh"
+      - source: "demo_justice"
         destination: orcFile
-        description: "Some integration"
+        description: "Some other integration"

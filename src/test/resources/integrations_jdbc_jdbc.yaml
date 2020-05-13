@@ -19,6 +19,3 @@ integrations:
       - source: "demo_justice"
         destination: demo_justice_OLcopy
         description: "Some other integration"
-      - source: "( select * from demo_health where \"GivenName\" = 'Jennifer') dh"
-        destination: demo_health_subset_OLcopy
-        description: "Some integration"

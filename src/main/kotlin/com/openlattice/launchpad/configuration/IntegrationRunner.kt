@@ -83,19 +83,13 @@ class IntegrationRunner {
             return session.orCreate
         }
 
-        @SuppressFBWarnings(
-                value = ["DM_EXIT"],
-                justification = "Intentionally shutting down JVM on terminal error"
-        )
-        @VisibleForTesting
         @JvmStatic
-        fun runIntegrations(integrationConfiguration: IntegrationConfiguration) {
-            val integrationsMap = integrationConfiguration.integrations
+        fun convertToDataLakesIfPresent(integrationConfiguration: IntegrationConfiguration): Map<String, DataLake> {
             val sourcesConfig = integrationConfiguration.datasources.orElse(listOf())
             val destsConfig = integrationConfiguration.destinations.orElse(listOf())
 
             // map to lakes if needed. This will be removed once launchpads are upgraded
-            val lakes = if ( integrationConfiguration.datalakes.isEmpty ){
+            return if ( integrationConfiguration.datalakes.isEmpty ){
                 val newLakes = ArrayList<DataLake>()
                 destsConfig.forEach { newLakes.add(it.asDataLake()) }
                 sourcesConfig.forEach { newLakes.add(it.asDataLake()) }
@@ -103,9 +97,22 @@ class IntegrationRunner {
             } else {
                 integrationConfiguration.datalakes.get()
             }.map{ it.name to it }.toMap()
+        }
+
+        @SuppressFBWarnings(
+                value = ["DM_EXIT"],
+                justification = "Intentionally shutting down JVM on terminal error"
+        )
+        @VisibleForTesting
+        @JvmStatic
+        fun runIntegrations(integrationConfiguration: IntegrationConfiguration): Map<String, Map<String, List<String>>> {
+            val integrationsMap = integrationConfiguration.integrations
+
+            // map to lakes if needed. This should be removed once launchpads are upgraded
+            val lakes = convertToDataLakesIfPresent(integrationConfiguration)
 
             lakes.filter {
-                isLatticeLoggingLake( it.value )
+                it.value.latticeLogger
             }.forEach { (_, destination) ->
                 destination.getHikariDatasource().connection.use { conn ->
                     conn.createStatement().use { stmt ->
@@ -116,9 +123,13 @@ class IntegrationRunner {
 
             val session = configureOrGetSparkSession(integrationConfiguration)
 
-            integrationsMap.forEach { sourceLakeName, destToIntegration ->
+            return integrationsMap.map {sources ->
+                val sourceLakeName = sources.key
+                val destToIntegration = sources.value
                 val sourceLake = lakes.getValue( sourceLakeName )
-                Multimaps.asMap(destToIntegration).forEach { destinationName, integrations ->
+                val value = Multimaps.asMap(destToIntegration).map {destinations ->
+                    val destinationName = destinations.key
+                    val integrations = destinations.value
                     val extIntegrations = integrations.filter { !it.gluttony } + integrations
                             .filter { it.gluttony }
                             .flatMap { integration ->
@@ -135,9 +146,8 @@ class IntegrationRunner {
                                 }
                             }
 
-                    extIntegrations.forEach { integration ->
+                    val paths = extIntegrations.map { integration ->
                         val destination = lakes.getValue(destinationName)
-
                         logger.info("Running integration: {}", integration)
                         val start = OffsetDateTime.now()
                         logStarted(integrationConfiguration.name, destination, integration, start)
@@ -164,7 +174,9 @@ class IntegrationRunner {
                                         .option("header", true)
                                         .format( CSV_FORMAT )
                             }
-                            ORC_FORMAT -> ds.write().format( ORC_FORMAT )
+                            ORC_FORMAT -> {
+                                ds.write().format( ORC_FORMAT )
+                            }
                             else -> {
                                 ds.write()
                                         .option("batchsize", destination.batchSize.toLong())
@@ -175,24 +187,27 @@ class IntegrationRunner {
                         }
                         logger.info("Created spark writer for destination: {}", destination)
                         val ctxt = timer.time()
-                        when (destination.driver) {
-                            FILESYSTEM_DRIVER -> sparkWriter.save(destination.url)
-                            S3_DRIVER -> {
-                                sparkWriter.save("${destination.url}-${OffsetDateTime.now(Clock.systemUTC())}")
+                        val destinationPath = when (destination.driver) {
+                            FILESYSTEM_DRIVER, S3_DRIVER -> {
+                                val fileName = "${integration.destination}-${OffsetDateTime.now(Clock.systemUTC())}"
+                                sparkWriter.save("${destination.url}/$fileName")
+                                fileName
                             }
-                            else -> toDatabase(integrationConfiguration.name, sparkWriter, destination, integration, start)
+                            else -> {
+                                toDatabase(integrationConfiguration.name, sparkWriter, destination, integration, start)
+                                integration.destination
+                            }
                         }
                         val elapsedNs = ctxt.stop()
                         val secs = elapsedNs/1_000_000_000.0
                         val mins = secs/60.0
                         logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
+                        destinationPath
                     }
-                }
-            }
-        }
-
-        private fun isLatticeLoggingLake(destination: DataLake): Boolean {
-            return destination.latticeLogger
+                    destinationName to paths
+                }.toMap()
+                sourceLakeName to value
+            }.toMap()
         }
 
         @SuppressFBWarnings(
@@ -234,7 +249,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isLatticeLoggingLake( destination )){
+            if (!destination.latticeLogger){
                 logger.info("Starting integration $integrationName to ${destination.name}")
                 return
             }
@@ -276,7 +291,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isLatticeLoggingLake( destination )){
+            if (! destination.latticeLogger ){
                 logger.info("Integration succeeded")
                 return
             }
@@ -293,13 +308,13 @@ class IntegrationRunner {
             }
         }
 
-        private fun logFailed(
+        fun logFailed(
                 integrationName: String,
                 destination: DataLake,
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!isLatticeLoggingLake( destination )){
+            if (! destination.latticeLogger ){
                 logger.info("Integration failed")
                 return
             }
@@ -317,22 +332,31 @@ class IntegrationRunner {
         }
 
         @JvmStatic
-        private fun getSourceDataset(datasource: DataLake, integration: Integration, sparkSession: SparkSession ): Dataset<Row> {
-            when (datasource.driver) {
+        fun getSourceDataset(datasource: DataLake, integration: Integration, sparkSession: SparkSession ): Dataset<Row> {
+            return getDataset(datasource, integration.source, sparkSession)
+        }
+
+        @JvmStatic
+        fun getDataset(lake: DataLake, fileOrTableName: String, sparkSession: SparkSession, knownHeader: Boolean = false ): Dataset<Row> {
+            when (lake.dataFormat) {
                 CSV_FORMAT, LEGACY_CSV_FORMAT  -> return sparkSession
                         .read()
-                        .option("header", datasource.header)
+                        .option("header", if (knownHeader) true else lake.header)
                         .option("inferSchema", true)
-                        .csv(datasource.url + integration.source)
+                        .csv("${lake.url}/$fileOrTableName")
+                ORC_FORMAT -> return sparkSession
+                        .read()
+                        .option("inferSchema", true)
+                        .orc("${lake.url}/$fileOrTableName")
                 else -> return sparkSession
                         .read()
                         .format("jdbc")
-                        .option("url", datasource.url)
-                        .option("dbtable", integration.source)
-                        .option("user", datasource.username)
-                        .option("password", datasource.password)
-                        .option("driver", datasource.driver)
-                        .option("fetchSize", datasource.fetchSize.toLong())
+                        .option("url", lake.url)
+                        .option("dbtable", fileOrTableName)
+                        .option("user", lake.username)
+                        .option("password", lake.password)
+                        .option("driver", lake.driver)
+                        .option("fetchSize", lake.fetchSize.toLong())
                         .load()
             }
         }

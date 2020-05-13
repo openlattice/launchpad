@@ -2,41 +2,38 @@ package com.openlattice.launchpad
 
 import com.google.common.io.Resources
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
-import org.junit.Assert
+import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration
 import java.io.IOException
-import java.util.*
 
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
-class IntegrationConfigLoader: AbstractJacksonSerializationTest<IntegrationConfiguration>() {
-
-    override fun getSampleData(): IntegrationConfiguration {
-        try {
-            return asYaml("integrations_serialization_test.yaml")
-        } catch (e: IOException) {
-            e.printStackTrace()
-            Assert.fail("IOException getting sample data ")
-            return IntegrationConfiguration( "", "", Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), mapOf())
-        }
-    }
-
-    override fun getClazz(): Class<IntegrationConfiguration> {
-        return IntegrationConfiguration::class.java
-    }
-
+class IntegrationConfigLoader {
     companion object {
         @Throws(IOException::class)
         fun asYaml( filename: String ): IntegrationConfiguration {
-            return yaml.readValue(Resources.getResource(filename), IntegrationConfiguration::class.java)!!
+                return JacksonSerializationConfiguration.yamlMapper.readValue(Resources.getResource(filename),
+                    IntegrationConfiguration::class.java)!!
         }
     }
 
     object fromJdbc {
+        object toOracle {
+            @Throws(IOException::class)
+            fun implicitFormat(): IntegrationConfiguration {
+                return asYaml("integrations_jdbc_oracle.yaml")
+            }
+        }
+
         object toJdbc {
             @Throws(IOException::class)
             fun implicitFormat(): IntegrationConfiguration {
                 return asYaml("integrations_jdbc_jdbc.yaml")
+            }
+
+            @Throws(IOException::class)
+            fun appendOnlyConfiguration(): IntegrationConfiguration {
+                return asYaml("appendIntegrations.yaml")
             }
         }
 

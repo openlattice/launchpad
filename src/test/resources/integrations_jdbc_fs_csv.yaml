@@ -9,12 +9,12 @@ datasources:
     fetchSize: 20000
 destinations:
   - name: csvFile
-    url: "/tmp/csv-integ-test.csv"
+    url: "/tmp/csv-integ-test"
     driver: "filesystem"
     dataFormat: "csv"
 integrations:
   remotedb:
     csvFile:
-      - source: "( select * from demo_health where \"GivenName\" = 'Jennifer') dh"
+      - source: "demo_justice"
         destination: csvFile
-        description: "Some integration"
+        description: "Some other integration"

@@ -1,9 +1,23 @@
 name: "example_filetransfer"
 description: "Copying over data from demo health table into OpenLattice server"
-awsClient:
+awsConfig:
   regionName: ""
   accessKeyId: ""
   secretAccessKey: ""
+datalakes:
+  - name: "remotedbLake"
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+    driver: "org.postgresql.Driver"
+    dataFormat: "org.postgresql.Driver"
+    username: "example_user"
+    password: "examplepassword"
+    fetchSize: 20000
+    batchSize: 20000
+    writeMode: "Overwrite"
+  - name: "csvLake"
+    url: "/tmp/csv-integ-test.csv"
+    driver: "filesystem"
+    dataFormat: "csv"
 datasources:
   - name: remotedb
     url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"

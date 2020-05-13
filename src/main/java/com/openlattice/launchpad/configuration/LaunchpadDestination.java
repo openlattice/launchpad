@@ -168,6 +168,16 @@ public class LaunchpadDestination {
         return writeMode;
     }
 
+    @JsonProperty( USERNAME )
+    public String getUsername() {
+        return username;
+    }
+
+    @JsonProperty( PASSWORD )
+    public String getPassword()  {
+        return password;
+    }
+
     @Override public boolean equals( Object o ) {
         if ( this == o ) { return true; }
         if ( !( o instanceof LaunchpadDestination ) ) { return false; }

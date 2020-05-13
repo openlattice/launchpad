@@ -16,7 +16,7 @@ class JacksonSerializationConfiguration {
 
     companion object {
         @JvmField
-        public val mapper = createJsonMapper()
+        public val jsonMapper = createJsonMapper()
 
         @JvmField
         public val smileMapper = createSmileMapper()

@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public abstract class AbstractJacksonSerializationTest<T> {
-    protected static final ObjectMapper mapper = JacksonSerializationConfiguration.mapper;
+    protected static final ObjectMapper mapper = JacksonSerializationConfiguration.jsonMapper;
     protected static final ObjectMapper smile  = JacksonSerializationConfiguration.smileMapper;
     protected static final ObjectMapper yaml   = JacksonSerializationConfiguration.yamlMapper;
     protected final        Logger       logger = LoggerFactory.getLogger( getClass() );
