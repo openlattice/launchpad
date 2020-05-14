@@ -36,7 +36,7 @@ if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
 }
 
 if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
-    LP_ARGS = 'spark local'
+    LP_ARGS = ''
 }
 
 if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
@@ -48,7 +48,7 @@ if (GC == 'null' || GC == null || GC == "") {
 }
 
 
-mainClassName = "com.openlattice.launchpad.LaunchPad"
+mainClassName = "com.openlattice.launchpad.Launchpad"
 applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8

@@ -9,7 +9,7 @@ import org.apache.commons.cli.Options
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
 
-class LaunchPadCli {
+class LaunchpadCli {
     companion object {
         const val HELP    = "help"
         const val FILE    = "file"

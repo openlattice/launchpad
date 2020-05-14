@@ -25,23 +25,23 @@ import java.util.Optional;
  * Main class for running launchpad.
  */
 @SuppressFBWarnings(value = "SECPTI", justification = "User input for file is considered trusted.")
-public class LaunchPad {
+public class Launchpad {
     private static final ObjectMapper mapper            = JacksonSerializationConfiguration.yamlMapper;
 
-    private static final Logger logger = LoggerFactory.getLogger( LaunchPad.class );
+    private static final Logger logger = LoggerFactory.getLogger( Launchpad.class );
 
 
     public static void main( String[] args ) throws ParseException, IOException {
-        CommandLine cl = LaunchPadCli.parseCommandLine( args );
+        CommandLine cl = LaunchpadCli.parseCommandLine( args );
 
-        if ( cl.hasOption( LaunchPadCli.HELP )){
-            LaunchPadCli.printHelp();
+        if ( cl.hasOption( LaunchpadCli.HELP )){
+            LaunchpadCli.printHelp();
             System.exit(0);
         }
 
-        Preconditions.checkArgument( cl.hasOption( LaunchPadCli.FILE ), "Integration file must be specified!" );
+        Preconditions.checkArgument( cl.hasOption( LaunchpadCli.FILE ), "Integration file must be specified!" );
 
-        final String integrationFilePath = cl.getOptionValue( LaunchPadCli.FILE );
+        final String integrationFilePath = cl.getOptionValue( LaunchpadCli.FILE );
         Preconditions.checkState( StringUtils.isNotBlank( integrationFilePath ) );
         File integrationFile = new File( integrationFilePath );
 
@@ -50,7 +50,7 @@ public class LaunchPad {
                 IntegrationConfiguration.class );
 
         Optional<List<DataLake>> currentLakes = config.getDatalakes();
-        if ( !currentLakes.isPresent() || ( currentLakes.isPresent() && currentLakes.get().isEmpty() )) {
+        if ( !currentLakes.isPresent() || currentLakes.get().isEmpty() ) {
             IntegrationConfiguration newConfig = convertToDataLakes( config );
             String newJson = mapper.writeValueAsString( newConfig );
             System.out.println("Please replace your current yaml configuration file with the below yaml:");
@@ -64,7 +64,7 @@ public class LaunchPad {
 
     public static IntegrationConfiguration convertToDataLakes( IntegrationConfiguration config ) {
         Optional<List<DataLake>> currentLakes = config.getDatalakes();
-        if ( !currentLakes.isPresent() || ( currentLakes.isPresent() && currentLakes.get().isEmpty() )) {
+        if ( !currentLakes.isPresent() || currentLakes.get().isEmpty() ) {
             List<DataLake> lakes = Lists.newArrayList();
             for ( LaunchpadDatasource source : config.getDatasources().get()){
                 lakes.add(source.asDataLake());
