@@ -125,6 +125,24 @@ data class DataLake(
 ) {
     companion object  {
         private val logger = LoggerFactory.getLogger(DataLake::class.java)
+
+        @JvmStatic
+        fun withUsernameAndPassword( dataLake: DataLake, username: String?, password: String? ): DataLake {
+            return DataLake(
+                    dataLake.name,
+                    dataLake.url,
+                    dataLake.driver,
+                    dataLake.dataFormat,
+                    username?:dataLake.username,
+                    password?:dataLake.password,
+                    dataLake.header,
+                    dataLake.fetchSize,
+                    dataLake.batchSize,
+                    dataLake.writeMode,
+                    dataLake.latticeLogger,
+                    dataLake.properties
+            )
+        }
     }
 
     init {

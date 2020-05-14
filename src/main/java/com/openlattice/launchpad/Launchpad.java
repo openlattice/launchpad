@@ -26,10 +26,8 @@ import java.util.Optional;
  */
 @SuppressFBWarnings(value = "SECPTI", justification = "User input for file is considered trusted.")
 public class Launchpad {
-    private static final ObjectMapper mapper            = JacksonSerializationConfiguration.yamlMapper;
 
     private static final Logger logger = LoggerFactory.getLogger( Launchpad.class );
-
 
     public static void main( String[] args ) throws ParseException, IOException {
         CommandLine cl = LaunchpadCli.parseCommandLine( args );
@@ -45,6 +43,8 @@ public class Launchpad {
         Preconditions.checkState( StringUtils.isNotBlank( integrationFilePath ) );
         File integrationFile = new File( integrationFilePath );
 
+        ObjectMapper mapper = JacksonSerializationConfiguration.yamlMapper;
+
         IntegrationConfiguration config = mapper.readValue(
                 integrationFile,
                 IntegrationConfiguration.class );
@@ -58,6 +58,8 @@ public class Launchpad {
 
             System.exit( -1 );
         }
+
+        config = LaunchpadCli.readUsernamesPasswordsAndUpdateConfiguration( config, cl );
 
         IntegrationRunner.runIntegrations( config );
     }
