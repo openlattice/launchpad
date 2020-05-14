@@ -63,7 +63,6 @@ class LaunchpadSmokeTests {
                                     rest.append('/')
                                 }
                                 rest.append(path)
-                                rest.append('/')
                                 println("deleting from bucket: $bucket key: ${rest.toString()}")
                                 try {
                                     s3Client.deleteObject(bucket, rest.toString())
