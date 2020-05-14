@@ -76,8 +76,8 @@ class IntegrationRunner {
                 println("${config.awsSecretKey}")
                 val manualConfig = integrationConfiguration.awsConfig.get()
                 session
-                        .config("fs.s3a.access.key", config.awsAccessKeyId)
-                        .config("fs.s3a.secret.key", config.awsSecretKey)
+//                        .config("fs.s3a.access.key", config.awsAccessKeyId)
+//                        .config("fs.s3a.secret.key", config.awsSecretKey)
                         .config("fs.s3a.endpoint", "s3.${manualConfig.regionName}.amazonaws.com")
                         .config("spark.hadoop.fs.s3a.multiobjectdelete.enable","false")
                         .config("spark.hadoop.fs.s3a.fast.upload","true")
