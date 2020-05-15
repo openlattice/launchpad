@@ -39,7 +39,13 @@ class LaunchpadCli {
 
         @JvmStatic
         fun parseCommandLine(args: Array<String> ) : CommandLine {
-            return DefaultParser().parse(options, args )
+            try {
+                return DefaultParser().parse(options, args )
+            } catch ( ex: MissingOptionException ) {
+                println("Integration file must be specified!")
+                System.exit(-1)
+            }
+            return CommandLine.Builder().build()
         }
 
         @JvmStatic

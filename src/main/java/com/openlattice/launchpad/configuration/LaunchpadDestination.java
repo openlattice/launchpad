@@ -93,8 +93,8 @@ public class LaunchpadDestination {
     }
 
     public DataLake asDataLake() {
-        String lakeDataFormat = "";
-        String lakeDriver = "";
+        String lakeDataFormat;
+        String lakeDriver;
         switch ( writeDriver ){
             case S3_DRIVER:
                 lakeDriver = S3_DRIVER;
