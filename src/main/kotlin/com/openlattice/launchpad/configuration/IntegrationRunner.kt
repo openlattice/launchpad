@@ -164,23 +164,13 @@ class IntegrationRunner {
                         }
                         logger.info("Created spark writer for destination: {}", destination)
                         val ctxt = timer.time()
-                        val destinationPath = when (destination.driver) {
-                            FILESYSTEM_DRIVER, S3_DRIVER -> {
-                                val fileName = "${integration.destination}-${OffsetDateTime.now(Clock.systemUTC())}"
-                                sparkWriter.save("${destination.url}/$fileName")
-                                externalLogger.logSuccessful(integration, start)
-                                fileName
-                            }
-                            else -> {
-                                toDatabase(sparkWriter, destination, integration, start, externalLogger)
-                                integration.destination
-                            }
-                        }
-                        val elapsedNs = ctxt.stop()
-                        val secs = elapsedNs/1_000_000_000.0
+
+                        val path = writeData(sparkWriter, destination, integration, start, externalLogger)
+
+                        val secs = ctxt.stop()/1_000_000_000.0
                         val mins = secs/60.0
                         logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
-                        destinationPath
+                        path
                     }
                     destinationName to paths
                 }.toMap()
@@ -193,22 +183,33 @@ class IntegrationRunner {
                 justification = "Intentionally shutting down JVM on terminal error"
         )
         @JvmStatic
-        private fun toDatabase(
-                ds: DataFrameWriter<Row>,
+        private fun writeData(
+                sparkWriter: DataFrameWriter<Row>,
                 destination: DataLake,
                 integration: Integration,
-                timestamp: OffsetDateTime,
+                start: OffsetDateTime,
                 externalLogger: LaunchpadLogger
-        ) {
+        ): String {
             try {
-                ds.jdbc(
-                        destination.url,
-                        integration.destination,
-                        destination.properties
-                )
-                externalLogger.logSuccessful(integration, timestamp)
-            } catch (ex: Exception) {
-                externalLogger.logFailed(integration, timestamp, ex)
+                when (destination.driver) {
+                    FILESYSTEM_DRIVER, S3_DRIVER -> {
+                        val fileName = "${integration.destination}-${OffsetDateTime.now(Clock.systemUTC())}"
+                        sparkWriter.save("${destination.url}/$fileName")
+                        externalLogger.logSuccessful(integration, start)
+                        return fileName
+                    }
+                    else -> {
+                        sparkWriter.jdbc(
+                                destination.url,
+                                integration.destination,
+                                destination.properties
+                        )
+                        externalLogger.logSuccessful(integration, start)
+                        return integration.destination
+                    }
+                }
+            } catch ( ex: Exception ) {
+                externalLogger.logFailed(integration, start, ex)
                 kotlin.system.exitProcess(1)
             }
         }
