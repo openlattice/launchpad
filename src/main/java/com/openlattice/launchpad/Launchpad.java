@@ -13,8 +13,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,10 +24,6 @@ import java.util.Optional;
  */
 @SuppressFBWarnings(value = "SECPTI", justification = "User input for file is considered trusted.")
 public class Launchpad {
-    private static final ObjectMapper mapper            = JacksonSerializationConfiguration.yamlMapper;
-
-    private static final Logger logger = LoggerFactory.getLogger( Launchpad.class );
-
 
     public static void main( String[] args ) throws ParseException, IOException {
         CommandLine cl = LaunchpadCli.parseCommandLine( args );
@@ -39,11 +33,11 @@ public class Launchpad {
             System.exit(0);
         }
 
-        Preconditions.checkArgument( cl.hasOption( LaunchpadCli.FILE ), "Integration file must be specified!" );
-
         final String integrationFilePath = cl.getOptionValue( LaunchpadCli.FILE );
         Preconditions.checkState( StringUtils.isNotBlank( integrationFilePath ) );
         File integrationFile = new File( integrationFilePath );
+
+        ObjectMapper mapper = JacksonSerializationConfiguration.yamlMapper;
 
         IntegrationConfiguration config = mapper.readValue(
                 integrationFile,
@@ -58,6 +52,8 @@ public class Launchpad {
 
             System.exit( -1 );
         }
+
+        config = LaunchpadCli.readUsernamesPasswordsAndUpdateConfiguration( config, cl );
 
         IntegrationRunner.runIntegrations( config );
     }

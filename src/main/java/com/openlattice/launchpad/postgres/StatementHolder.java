@@ -100,10 +100,10 @@ public class StatementHolder implements Closeable {
             otherStatements.forEach( this::safeTryClose );
 
             final long elapsed = sw.elapsed( TimeUnit.MILLISECONDS );
-            if ( elapsed > this.longRunningQueryLimit ) {
+            if ( elapsed > longRunningQueryLimit ) {
                 logger.warn( "The following statement was involved in a long lived connection that took {} ms: {}",
                         elapsed,
-                        statement.toString() );
+                        statement );
             }
 
             sw.stop();
