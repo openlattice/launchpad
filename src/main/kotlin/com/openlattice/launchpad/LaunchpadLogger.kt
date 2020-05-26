@@ -1,8 +1,10 @@
 package com.openlattice.launchpad
 
+import com.openlattice.launchpad.configuration.CompletionState
 import com.openlattice.launchpad.configuration.DataLake
 import com.openlattice.launchpad.configuration.Integration
 import com.openlattice.launchpad.configuration.IntegrationTables
+import com.zaxxer.hikari.HikariDataSource
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,7 +17,9 @@ import java.util.*
  */
 class LaunchpadLogger(val logger: Logger,
                       val integrationName: String,
-                      val loggingLake: DataLake) {
+                      val loggingLake: DataLake,
+                      val hikariDataSource: HikariDataSource = loggingLake.getHikariDatasource()
+) {
 
     companion object {
         private val lpLogger = LoggerFactory.getLogger(LaunchpadLogger::class.java)
@@ -35,7 +39,7 @@ class LaunchpadLogger(val logger: Logger,
     }
 
     init {
-        loggingLake.getHikariDatasource().connection.use { conn ->
+        hikariDataSource.connection.use { conn ->
             conn.createStatement().use { stmt ->
                 stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
             }
@@ -123,7 +127,7 @@ class LaunchpadLogger(val logger: Logger,
             integration: Integration,
             start: OffsetDateTime
     ) {
-        loggingLake.getHikariDatasource().connection.use { connection ->
+        hikariDataSource.connection.use { connection ->
             connection.prepareStatement(sql).use { ps ->
                 ps.setString(1, integrationName)
                 ps.setString(2, hostName)
@@ -135,8 +139,16 @@ class LaunchpadLogger(val logger: Logger,
     }
 }
 
-class LaunchpadShutdownHook( val launchpadLogger: LaunchpadLogger ): Thread() {
+class LaunchpadShutdownHook(
+        val launchpadLogger: LaunchpadLogger,
+        var currentState: CompletionState,
+        val hikariDataSource: HikariDataSource = launchpadLogger.hikariDataSource
+): Thread() {
     override fun run() {
-
+        hikariDataSource.connection.use { conn ->
+            conn.createStatement().use { stmt ->
+//                stmt.execute()
+            }
+        }
     }
 }

@@ -105,11 +105,12 @@ class IntegrationRunner {
                 LaunchpadLogger( logger, integrationConfiguration.name, destination )
             }.first()
 
-            Runtime.getRuntime().addShutdownHook( LaunchpadShutdownHook( externalLogger ) )
+            val launchpadShutdownHook = LaunchpadShutdownHook( externalLogger, CompletionState.CREATED )
+            Runtime.getRuntime().addShutdownHook( launchpadShutdownHook )
 
             val session = configureOrGetSparkSession(integrationConfiguration)
 
-            return integrationsMap.map {sources ->
+            return integrationsMap.map { sources ->
                 val sourceLakeName = sources.key
                 val destToIntegration = sources.value
                 val sourceLake = lakes.getValue( sourceLakeName )
@@ -134,12 +135,14 @@ class IntegrationRunner {
                     val paths = extIntegrations.map { integration ->
                         val destination = lakes.getValue(destinationName)
                         logger.info("Running integration: {}", integration)
+                        launchpadShutdownHook.currentState = CompletionState.STARTED
                         val start = OffsetDateTime.now()
                         externalLogger.logStarted( integration, start )
                         val ds = try {
                             logger.info("Transferring ${sourceLake.name} with query ${integration.source}")
                             getSourceDataset(sourceLake, integration, session)
                         } catch (ex: Exception) {
+                            launchpadShutdownHook.currentState = CompletionState.FAILURE
                             externalLogger.logFailed(integration, start, ex)
                             kotlin.system.exitProcess(1)
                         }
@@ -165,11 +168,12 @@ class IntegrationRunner {
                         logger.info("Created spark writer for destination: {}", destination)
                         val ctxt = timer.time()
 
-                        val path = writeData(sparkWriter, destination, integration, start, externalLogger)
+                        val path = writeData(sparkWriter, destination, integration, start, externalLogger, launchpadShutdownHook)
 
                         val secs = ctxt.stop()/1_000_000_000.0
                         val mins = secs/60.0
                         logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
+                        launchpadShutdownHook.currentState = CompletionState.SUCCESS
                         path
                     }
                     destinationName to paths
@@ -188,15 +192,15 @@ class IntegrationRunner {
                 destination: DataLake,
                 integration: Integration,
                 start: OffsetDateTime,
-                externalLogger: LaunchpadLogger
+                externalLogger: LaunchpadLogger,
+                launchpadShutdownHook: LaunchpadShutdownHook
         ): String {
             try {
-                when (destination.driver) {
+                val path = when (destination.driver) {
                     FILESYSTEM_DRIVER, S3_DRIVER -> {
                         val fileName = "${integration.destination}-${OffsetDateTime.now(Clock.systemUTC())}"
                         sparkWriter.save("${destination.url}/$fileName")
-                        externalLogger.logSuccessful(integration, start)
-                        return fileName
+                        fileName
                     }
                     else -> {
                         sparkWriter.jdbc(
@@ -204,11 +208,13 @@ class IntegrationRunner {
                                 integration.destination,
                                 destination.properties
                         )
-                        externalLogger.logSuccessful(integration, start)
-                        return integration.destination
+                        integration.destination
                     }
                 }
+                externalLogger.logSuccessful(integration, start)
+                return path
             } catch ( ex: Exception ) {
+                launchpadShutdownHook.currentState = CompletionState.FAILURE
                 externalLogger.logFailed(integration, start, ex)
                 kotlin.system.exitProcess(1)
             }
