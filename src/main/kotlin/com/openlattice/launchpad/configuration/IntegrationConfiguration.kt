@@ -152,10 +152,9 @@ data class DataLake(
     }
 }
 
-enum class CompletionState(message: String) {
+enum class CompletionState(val message: String) {
     CREATED("Launchpad has been invoked but has not started running"),
     STARTED("Integration has started"),
     SUCCESS("Integration completed successfully"),
-    TERMINATED("Integration was terminated unexpectedly"),
     FAILURE("Integration failed")
 }
