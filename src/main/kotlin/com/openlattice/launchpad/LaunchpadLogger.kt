@@ -46,20 +46,12 @@ class LaunchpadLogger(val logger: Logger,
             integration: Integration,
             start: OffsetDateTime
     ) {
-        try {
-            unsafeExecuteSql(
-                    IntegrationTables.LOG_INTEGRATION_STARTED,
-                    integration,
-                    start
-            )
-        } catch (ex: Exception) {
-            logger.warn("Unable to create activity entry in the database. Continuing data transfer...", ex)
-        }
-        logger.info(
+        logWithOptions(
+                IntegrationTables.LOG_INTEGRATION_STARTED,
+                "Unable to create activity entry in the database. Continuing data transfer...",
                 "Started integration {} going from {} to {}.",
-                integrationName,
-                integration.source,
-                integration.destination
+                integration,
+                start
         )
     }
 
@@ -67,20 +59,12 @@ class LaunchpadLogger(val logger: Logger,
             integration: Integration,
             start: OffsetDateTime
     ) {
-        try {
-            unsafeExecuteSql(
-                    IntegrationTables.LOG_SUCCESSFUL_INTEGRATION,
-                    integration,
-                    start
-            )
-        } catch (ex: Exception) {
-            logger.warn("Unable to log success to database. Continuing data transfer...", ex)
-        }
-        logger.info(
+        logWithOptions(
+                IntegrationTables.LOG_SUCCESSFUL_INTEGRATION,
+                "Unable to log success to database. Continuing data transfer...",
                 "Integration {} succeeded going from {} to {}.",
-                integrationName,
-                integration.source,
-                integration.destination
+                integration,
+                start
         )
     }
 
@@ -108,6 +92,31 @@ class LaunchpadLogger(val logger: Logger,
         )
     }
 
+    private fun logWithOptions(
+            loggingSql: String,
+            exceptionMessage: String,
+            logFileMessage: String,
+            integration: Integration,
+            start: OffsetDateTime
+    ) {
+        try {
+            unsafeExecuteSql(
+                    loggingSql,
+                    integration,
+                    start
+            )
+        } catch (ex: Exception) {
+            logger.warn(exceptionMessage, ex)
+        }
+
+        logger.info(
+                logFileMessage,
+                integrationName,
+                integration.source,
+                integration.destination
+        )
+    }
+
     @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doesn't like kotlin")
     private fun unsafeExecuteSql(
             sql: String,
@@ -128,5 +137,6 @@ class LaunchpadLogger(val logger: Logger,
 
 class LaunchpadShutdownHook( val launchpadLogger: LaunchpadLogger ): Thread() {
     override fun run() {
+
     }
 }
