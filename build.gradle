@@ -1,14 +1,13 @@
 plugins {
     id 'application'
     id 'java'
-    id 'eclipse'
     id 'idea'
     id 'jacoco'
     id 'maven-publish'
     id 'signing'
     id 'com.github.spotbugs' version '3.0.0'
-    id 'org.jetbrains.kotlin.jvm' version '1.3.61'
-    id 'org.jetbrains.kotlin.plugin.spring' version '1.3.61'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.72'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.3.72'
     id 'org.jetbrains.dokka' version '0.9.18'
 }
 
@@ -37,7 +36,7 @@ if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
 }
 
 if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
-    LP_ARGS = 'spark local'
+    LP_ARGS = ''
 }
 
 if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
@@ -49,7 +48,7 @@ if (GC == 'null' || GC == null || GC == "") {
 }
 
 
-mainClassName = "com.openlattice.launchpad.LaunchPad"
+mainClassName = "com.openlattice.launchpad.Launchpad"
 applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -100,10 +99,12 @@ sourceSets {
 jar {
     doFirst {
         manifest {
-            attributes "Class-Path": configurations.runtime.files.collect { it.getName() }.join(" ")
+            attributes (
+                    "Class-Path": configurations.runtime.files.collect { it.getName() }.join(" "),
+                    "Main-Class": mainClassName
+            )
         }
     }
-
 }
 
 dependencies {
@@ -133,9 +134,16 @@ dependencies {
 
     compile "com.google.guava:guava:${guava_version}"
 
+    hadoop_version='2.10.0'
+    spark_version='2.4.3'
     compile "org.apache.spark:spark-core_2.11:${spark_version}"
     compile "org.apache.spark:spark-sql_2.11:${spark_version}"
+    compile "org.apache.hadoop:hadoop-aws:${hadoop_version}"
+    compile "org.apache.hadoop:hadoop-hdfs:${hadoop_version}"
+    compile "org.apache.hadoop:hadoop-common:${hadoop_version}"
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-bundle', version: '1.11.769'
 
+    jackson_version='2.10.4'
     compile "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
     compile "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jackson_version}"
@@ -149,10 +157,12 @@ dependencies {
     compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson_version}"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}"
     compile "com.fasterxml.jackson.module:jackson-module-scala_2.11:${jackson_version}"
-    compile 'org.yaml:snakeyaml:${snakeyaml_version}'
 
     compile "org.ow2.asm:asm:${asm_version}"
+
+    kotlin_version='1.3.72'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     /*
      * TESTING
@@ -165,16 +175,6 @@ dependencies {
 startScripts {
     classpath = files(jar.archivePath)
 }
-
-eclipse {
-    ext.downloadSources = true
-    ext.downloadJavadoc = true
-
-    ext.sourceCompatibility = JavaVersion.VERSION_11
-    ext.targetCompatibility = JavaVersion.VERSION_11
-}
-
-eclipse.classpath.plusConfigurations += [configurations.provided]
 
 compileKotlin {
     kotlinOptions {
