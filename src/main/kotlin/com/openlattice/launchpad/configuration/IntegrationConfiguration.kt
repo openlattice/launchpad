@@ -59,6 +59,8 @@ private const val INTEGRATIONS      = "integrations"
 private const val AWS_CONFIG        = "awsConfig"
 private const val DATA_LAKES        = "datalakes"
 private const val GLUTTONY          = "gluttony"
+private const val MERGE_SQL         = "mergeSql"
+private const val MASTER_TABLE_SQL  = "masterTableSql"
 
 private const val REGION_NAME       = "regionName"
 private const val ACCESS_KEY_ID     = "accessKeyId"
@@ -85,7 +87,15 @@ data class IntegrationConfiguration(
 }
 
 /**
- *
+ * @param description An optional description parameter for documenting the integration.
+ * @param source The source table or SQL which determines what data will be transferred.
+ * @param destination The destination table where data will be written.
+ * @param mergeSql Optional parameter for specifying the UPSERT SQL behavior for merging into the master table if a
+ * conflict is encountered.
+ * @param masterTableSql Optional parameter specifying the creation SQL for master table into which updates should be
+ * upserted. For safety, use CREATE TABLE IF NOT EXISTS so that call doesn't fail it table already exists.
+ * @param gluttony Setting gluttony to true will attempt to use the global catalog to ingest all accessible tables
+ * in the database.
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -93,6 +103,8 @@ data class Integration(
         @JsonProperty(DESCRIPTION) val description : String = "",
         @JsonProperty(SOURCE) val source: String,
         @JsonProperty(DESTINATION) val destination: String,
+        @JsonProperty(MERGE_SQL) val mergeSql: String = "",
+        @JsonProperty(MASTER_TABLE_SQL) val masterTableSql : String = "",
         @JsonProperty(GLUTTONY) val gluttony : Boolean = false
 )
 
