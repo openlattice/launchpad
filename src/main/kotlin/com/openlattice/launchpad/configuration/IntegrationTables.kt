@@ -24,6 +24,7 @@ class IntegrationTables {
         const val LOG_INTEGRATION_STARTED  = "INSERT INTO integration_activity (integration_name, host_name, table_name, start) " +
                 "VALUES (?,?,?,?)"
 
+
         /**
          * Preparable sql query for logging a successfully completed integration with the following bind parameters:
          *

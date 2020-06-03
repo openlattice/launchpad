@@ -70,15 +70,15 @@ class IntegrationRunner {
             val session = SparkSession.builder()
                     .master("local[${Runtime.getRuntime().availableProcessors()}]")
                     .appName("integration")
-            if ( integrationConfiguration.awsConfig.isPresent ){
+            if (integrationConfiguration.awsConfig.isPresent) {
                 val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
                 val manualConfig = integrationConfiguration.awsConfig.get()
                 session
                         .config("fs.s3a.access.key", config.awsAccessKeyId)
                         .config("fs.s3a.secret.key", config.awsSecretKey)
                         .config("fs.s3a.endpoint", "s3.${manualConfig.regionName}.amazonaws.com")
-                        .config("spark.hadoop.fs.s3a.multiobjectdelete.enable","false")
-                        .config("spark.hadoop.fs.s3a.fast.upload","true")
+                        .config("spark.hadoop.fs.s3a.multiobjectdelete.enable", "false")
+                        .config("spark.hadoop.fs.s3a.fast.upload", "true")
                         .config("spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version", "2")
                         .config("spark.speculation", "false")
             }
@@ -105,7 +105,9 @@ class IntegrationRunner {
         )
         @VisibleForTesting
         @JvmStatic
-        fun runIntegrations(integrationConfiguration: IntegrationConfiguration): Map<String, Map<String, List<String>>> {
+        fun runIntegrations(
+                integrationConfiguration: IntegrationConfiguration
+        ): Map<String, Map<String, List<String>>> {
             val integrationsMap = integrationConfiguration.integrations
 
             // map to lakes if needed. This should be removed once launchpads are upgraded
@@ -123,11 +125,11 @@ class IntegrationRunner {
 
             val session = configureOrGetSparkSession(integrationConfiguration)
 
-            return integrationsMap.map {sources ->
+            return integrationsMap.map { sources ->
                 val sourceLakeName = sources.key
                 val destToIntegration = sources.value
-                val sourceLake = lakes.getValue( sourceLakeName )
-                val value = Multimaps.asMap(destToIntegration).map {destinations ->
+                val sourceLake = lakes.getValue(sourceLakeName)
+                val value = Multimaps.asMap(destToIntegration).map { destinations ->
                     val destinationName = destinations.key
                     val integrations = destinations.value
                     val extIntegrations = integrations.filter { !it.gluttony } + integrations
@@ -137,6 +139,7 @@ class IntegrationRunner {
                                 BasePostgresIterable(
                                         StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
                                 ) { rs ->
+                                    //TODO: Add support for reading gluttony flag, master sql, upsert sql.
                                     Integration(
                                             rs.getString("description"),
                                             rs.getString("query"),
@@ -171,16 +174,16 @@ class IntegrationRunner {
                             CSV_FORMAT, LEGACY_CSV_FORMAT -> {
                                 ds.write()
                                         .option("header", true)
-                                        .format( CSV_FORMAT )
+                                        .format(CSV_FORMAT)
                             }
                             ORC_FORMAT -> {
-                                ds.write().format( ORC_FORMAT )
+                                ds.write().format(ORC_FORMAT)
                             }
                             else -> {
                                 ds.write()
                                         .option("batchsize", destination.batchSize.toLong())
                                         .option("driver", destination.driver)
-                                        .mode( destination.writeMode )
+                                        .mode(destination.writeMode)
                                         .format("jdbc")
                             }
                         }
@@ -198,8 +201,8 @@ class IntegrationRunner {
                             }
                         }
                         val elapsedNs = ctxt.stop()
-                        val secs = elapsedNs/1_000_000_000.0
-                        val mins = secs/60.0
+                        val secs = elapsedNs / 1_000_000_000.0
+                        val mins = secs / 60.0
                         logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
                         destinationPath
                     }
@@ -207,6 +210,33 @@ class IntegrationRunner {
                 }.toMap()
                 sourceLakeName to value
             }.toMap()
+        }
+
+        private fun mergeIntoMaster(
+                destination: DataLake,
+                integrationName: String,
+                integration: Integration,
+                start: OffsetDateTime
+        ) {
+            if (integration.masterTableSql.isBlank() || integration.mergeSql.isBlank()) return
+            try {
+                destination.getHikariDatasource().connection.use { conn ->
+                    conn.createStatement().use { stmt ->
+                        //Make sure master table exists and insert.
+                        stmt.execute(integration.masterTableSql)
+                        stmt.execute(integration.mergeSql)
+                    }
+                }
+            } catch (ex: Exception) {
+                logFailed(integrationName, destination, integration, start)
+                logger.error(
+                        "Integration {} failed going from {} to {} while merging to master. Exiting.",
+                        integrationName,
+                        integration.source,
+                        integration.destination,
+                        ex
+                )
+            }
         }
 
         @SuppressFBWarnings(
@@ -221,12 +251,15 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
+            //Try and merge any data from a failed previous run. Merge after success
             try {
+                mergeIntoMaster(destination, integrationName, integration, start)
                 ds.jdbc(
                         destination.url,
                         integration.destination,
                         destination.properties
                 )
+                mergeIntoMaster(destination, integrationName, integration, start)
                 logSuccessful(integrationName, destination, integration, start)
             } catch (ex: Exception) {
                 logFailed(integrationName, destination, integration, start)
@@ -248,7 +281,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (!destination.latticeLogger){
+            if (!destination.latticeLogger) {
                 logger.info("Starting integration $integrationName to ${destination.name}")
                 return
             }
@@ -290,7 +323,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (! destination.latticeLogger ){
+            if (!destination.latticeLogger) {
                 logger.info("Integration succeeded")
                 return
             }
@@ -313,7 +346,7 @@ class IntegrationRunner {
                 integration: Integration,
                 start: OffsetDateTime
         ) {
-            if (! destination.latticeLogger ){
+            if (!destination.latticeLogger) {
                 logger.info("Integration failed")
                 return
             }
@@ -331,14 +364,16 @@ class IntegrationRunner {
         }
 
         @JvmStatic
-        fun getSourceDataset(datasource: DataLake, integration: Integration, sparkSession: SparkSession ): Dataset<Row> {
+        fun getSourceDataset(datasource: DataLake, integration: Integration, sparkSession: SparkSession): Dataset<Row> {
             return getDataset(datasource, integration.source, sparkSession)
         }
 
         @JvmStatic
-        fun getDataset(lake: DataLake, fileOrTableName: String, sparkSession: SparkSession, knownHeader: Boolean = false ): Dataset<Row> {
+        fun getDataset(
+                lake: DataLake, fileOrTableName: String, sparkSession: SparkSession, knownHeader: Boolean = false
+        ): Dataset<Row> {
             when (lake.dataFormat) {
-                CSV_FORMAT, LEGACY_CSV_FORMAT  -> return sparkSession
+                CSV_FORMAT, LEGACY_CSV_FORMAT -> return sparkSession
                         .read()
                         .option("header", if (knownHeader) true else lake.header)
                         .option("inferSchema", true)
