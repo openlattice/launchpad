@@ -24,9 +24,11 @@ class LaunchpadSmokeTests {
     companion object {
         @JvmStatic
         fun runTestValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
-            val integrationPaths = IntegrationRunner.runIntegrations(config)
-            IntegrationValidator.validateIntegration( config, integrationPaths, *sortColumn )
-            cleanupAfterTest(config, integrationPaths)
+            IntegrationRunner.configureOrGetSparkSession( config ).use { session ->
+                val integrationPaths = IntegrationRunner.runIntegrations(config, session)
+                IntegrationValidator.validateIntegration( config, integrationPaths, *sortColumn )
+                cleanupAfterTest(config, integrationPaths)
+            }
         }
 
         @JvmStatic
