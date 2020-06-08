@@ -61,7 +61,6 @@ public class Launchpad {
         }
 
         try ( SparkSession session = IntegrationRunner.Companion.configureOrGetSparkSession( config )) {
-            Runtime.getRuntime().addShutdownHook( new SparkSessionShutdownHook( session ) );
             IntegrationRunner.runIntegrations( config, session );
         } catch ( Exception ex ) {
             logger.error( "Exception running launchpad integration", ex);
