@@ -107,6 +107,11 @@ jar {
     }
 }
 
+ext.spark_version='2.4.3'
+ext.hadoop_version='2.10.0'
+ext.aws_sdk_version='1.11.769'
+ext.jackson_version='2.10.4'
+ext.kotlin_version='1.3.72'
 dependencies {
     spotbugsPlugins "com.h3xstream.findsecbugs:findsecbugs-plugin:${findsecbugs_version}"
     compileOnly "net.jcip:jcip-annotations:${jcip_version}"
@@ -134,16 +139,15 @@ dependencies {
 
     compile "com.google.guava:guava:${guava_version}"
 
-    hadoop_version='2.10.0'
-    spark_version='2.4.3'
     compile "org.apache.spark:spark-core_2.11:${spark_version}"
     compile "org.apache.spark:spark-sql_2.11:${spark_version}"
+    
     compile "org.apache.hadoop:hadoop-aws:${hadoop_version}"
     compile "org.apache.hadoop:hadoop-hdfs:${hadoop_version}"
     compile "org.apache.hadoop:hadoop-common:${hadoop_version}"
-    compile group: 'com.amazonaws', name: 'aws-java-sdk-bundle', version: '1.11.769'
 
-    jackson_version='2.10.4'
+    compile "com.amazonaws:aws-java-sdk-bundle:${aws_sdk_version}"
+
     compile "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
     compile "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jackson_version}"
@@ -160,7 +164,6 @@ dependencies {
 
     compile "org.ow2.asm:asm:${asm_version}"
 
-    kotlin_version='1.3.72'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
@@ -169,7 +172,6 @@ dependencies {
      */
     testCompile "junit:junit:${junit_version}"
     testCompile "org.mockito:mockito-all:${mockito_version}"
-
 }
 
 startScripts {

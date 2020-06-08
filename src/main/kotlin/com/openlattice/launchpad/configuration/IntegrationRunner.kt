@@ -106,7 +106,8 @@ class IntegrationRunner {
         @VisibleForTesting
         @JvmStatic
         fun runIntegrations(
-                integrationConfiguration: IntegrationConfiguration
+                integrationConfiguration: IntegrationConfiguration,
+                session: SparkSession
         ): Map<String, Map<String, List<String>>> {
             val integrationsMap = integrationConfiguration.integrations
 
@@ -122,8 +123,6 @@ class IntegrationRunner {
                     }
                 }
             }
-
-            val session = configureOrGetSparkSession(integrationConfiguration)
 
             return integrationsMap.map { sources ->
                 val sourceLakeName = sources.key
