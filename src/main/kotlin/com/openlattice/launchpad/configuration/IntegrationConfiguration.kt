@@ -149,6 +149,13 @@ data class DataLake(
                 if ( password == "" ){
                     logger.warn("Connecting to $name with a blank password.")
                 }
+                if ( properties.isEmpty ){
+                    properties.put(Constants.MAXIMUM_POOL_SIZE, "1")
+                    properties.put(Constants.CONNECTION_TIMEOUT, "120000") //2-minute connection timeout
+                    properties.put(USER, username)
+                    properties.put(USERNAME, username)
+                    properties.put(PASSWORD, password)
+                }
             }
         }
     }

@@ -79,6 +79,14 @@ public class LaunchpadDatasource {
     }
 
     public DataLake asDataLake() {
+
+        final Properties properties = new Properties();
+        properties.put(MAXIMUM_POOL_SIZE, "1");
+        properties.put(CONNECTION_TIMEOUT, "120000"); //2-minute connection timeout
+        properties.setProperty( USER, username );
+        properties.setProperty( USERNAME, username );
+        properties.setProperty( PASSWORD, password );
+
         String lakeDataFormat = "";
         String lakeDriver = "";
         switch ( driver ){
@@ -116,7 +124,7 @@ public class LaunchpadDatasource {
                 DEFAULT_DATA_CHUNK_SIZE,
                 DEFAULT_WRITE_MODE,
                 false,
-                new Properties());
+                properties);
     }
 
     @JsonProperty( HEADER )
