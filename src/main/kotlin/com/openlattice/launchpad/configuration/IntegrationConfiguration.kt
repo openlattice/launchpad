@@ -21,8 +21,8 @@
 
 package com.openlattice.launchpad.configuration
 
+import com.fasterxml.jackson.annotation.JsonFilter
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.base.Preconditions
@@ -112,7 +112,7 @@ data class Integration(
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
-@JsonIgnoreProperties(SECRET_ACCESS_KEY, ACCESS_KEY_ID, allowSetters = true)
+@JsonFilter(Constants.CREDENTIALS_FILTER)
 data class AwsS3ClientConfiguration(
         @JsonProperty(REGION_NAME) val regionName: String,
         @JsonProperty(ACCESS_KEY_ID) val accessKeyId: String,
@@ -122,7 +122,7 @@ data class AwsS3ClientConfiguration(
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
-@JsonIgnoreProperties(USERNAME, PASSWORD, PROPERTIES, allowSetters = true)
+@JsonFilter(Constants.CREDENTIALS_FILTER)
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class DataLake(
         @JsonProperty(NAME) val name: String,

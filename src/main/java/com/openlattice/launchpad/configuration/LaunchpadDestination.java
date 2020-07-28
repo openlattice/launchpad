@@ -21,8 +21,8 @@
 
 package com.openlattice.launchpad.configuration;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
@@ -62,7 +62,7 @@ import static com.openlattice.launchpad.configuration.Constants.WRITE_MODE;
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 @Deprecated
-@JsonIgnoreProperties(value = {USERNAME, PASSWORD, PROPERTIES}, allowSetters = true)
+@JsonFilter(Constants.CREDENTIALS_FILTER)
 public class LaunchpadDestination {
 
     private static final Logger      logger = LoggerFactory.getLogger( LaunchpadDestination.class );

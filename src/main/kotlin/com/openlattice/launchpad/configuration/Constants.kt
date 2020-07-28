@@ -39,6 +39,8 @@ object Constants  {
 
     const val DEFAULT_DATA_CHUNK_SIZE = 20_000
 
+    const val CREDENTIALS_FILTER = "credentialsFilter"
+
     @JvmField
     val DEFAULT_WRITE_MODE = SaveMode.Overwrite
 

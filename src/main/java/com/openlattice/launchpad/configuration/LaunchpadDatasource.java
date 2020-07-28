@@ -21,7 +21,7 @@
 
 package com.openlattice.launchpad.configuration;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
@@ -46,7 +46,6 @@ import static com.openlattice.launchpad.configuration.Constants.NAME;
 import static com.openlattice.launchpad.configuration.Constants.NON_JDBC_DRIVERS;
 import static com.openlattice.launchpad.configuration.Constants.ORC_FORMAT;
 import static com.openlattice.launchpad.configuration.Constants.PASSWORD;
-import static com.openlattice.launchpad.configuration.Constants.PROPERTIES;
 import static com.openlattice.launchpad.configuration.Constants.S3_DRIVER;
 import static com.openlattice.launchpad.configuration.Constants.UNKNOWN;
 import static com.openlattice.launchpad.configuration.Constants.URL;
@@ -57,7 +56,7 @@ import static com.openlattice.launchpad.configuration.Constants.USERNAME;
  * Represents a name for data integrations.
  */
 @Deprecated
-@JsonIgnoreProperties(value = { USERNAME, PASSWORD, PROPERTIES}, allowSetters = true)
+@JsonFilter(Constants.CREDENTIALS_FILTER)
 public class LaunchpadDatasource {
     private static final Logger logger = LoggerFactory.getLogger( LaunchpadDestination.class );
 

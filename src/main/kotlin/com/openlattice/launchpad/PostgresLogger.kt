@@ -85,7 +85,7 @@ class LaunchpadLogger private constructor(
                 "Starting integration $integrationName data lake ${destinationTableName}",
                 "Unable to create activity entry in the database. Continuing data transfer..."
         ) { hds, hostname ->
-            val strippedConfigAsJson = JacksonSerializationConfiguration.jsonMapper.writeValueAsString(configuration)
+            val strippedConfigAsJson = JacksonSerializationConfiguration.credentialFilteredJsonMapper.writeValueAsString(configuration)
             hds.connection.use { connection ->
                 connection.prepareStatement(IntegrationTables.LOG_INTEGRATION_STARTED).use { ps ->
                     ps.setString(1, integrationName)

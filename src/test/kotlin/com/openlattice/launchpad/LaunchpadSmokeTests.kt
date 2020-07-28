@@ -93,7 +93,7 @@ class LaunchpadSmokeTests {
     @Throws(IOException::class)
     fun testJacksonFilterSerialziation() {
         val dataLakeConfig = IntegrationConfigLoader.fromJdbc.toS3.orcFormat()
-        var asString = JacksonSerializationConfiguration.jsonMapper.writeValueAsString( dataLakeConfig )
+        var asString = JacksonSerializationConfiguration.credentialFilteredJsonMapper.writeValueAsString( dataLakeConfig )
         println(asString)
         Assert.assertTrue(!asString.contains("testSecretAC"))
         Assert.assertTrue(!asString.contains("testACID"))
@@ -101,7 +101,7 @@ class LaunchpadSmokeTests {
         Assert.assertTrue(!asString.contains("examplepassword"))
 
         val legacyConfig = IntegrationConfigLoader.fromJdbc.toJdbc.implicitFormat()
-        asString = JacksonSerializationConfiguration.jsonMapper.writeValueAsString( legacyConfig )
+        asString = JacksonSerializationConfiguration.credentialFilteredJsonMapper.writeValueAsString( legacyConfig )
         println(asString)
         Assert.assertTrue(!asString.contains("example_user"))
         Assert.assertTrue(!asString.contains("examplepassword"))
