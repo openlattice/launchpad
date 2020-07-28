@@ -55,11 +55,11 @@ class IntegrationRunner {
 
         private lateinit var launchLogger: LaunchpadLogger
 
-        fun configureOrGetSparkSession(integrationConfiguration: IntegrationConfiguration): SparkSession {
+        fun configureOrGetSparkSession( integrationConfiguration: IntegrationConfiguration ): SparkSession {
             val session = SparkSession.builder()
                     .master("local[${Runtime.getRuntime().availableProcessors()}]")
                     .appName("integration")
-            if (integrationConfiguration.awsConfig.isPresent) {
+            if ( integrationConfiguration.awsConfig.isPresent ) {
                 val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
                 val manualConfig = integrationConfiguration.awsConfig.get()
                 session
@@ -101,20 +101,14 @@ class IntegrationRunner {
             // map to lakes if needed. This should be removed once launchpads are upgraded
             val lakes = convertToDataLakesIfPresent(integrationConfiguration)
 
-            val loggerLake = lakes.filter {
-                it.value.latticeLogger
-            }.entries.first().value
+            val launchLogger = LaunchpadLogger.createLogger( lakes )
 
-            launchLogger = LaunchpadLogger.fromLake( loggerLake )
-            launchLogger.createLoggingTable()
-
-            val integrationsMap = integrationConfiguration.integrations
-            return integrationsMap.map { (sourceLakeName, destToIntegration )->
+            return integrationConfiguration.integrations.map { (sourceLakeName, destToIntegration )->
                 val sourceLake = lakes.getValue(sourceLakeName)
                 val value = Multimaps.asMap(destToIntegration).map { ( destinationName, integrations ) ->
-                    val extIntegrations = integrations.filter { !it.gluttony } + integrations
-                            .filter { it.gluttony }
-                            .flatMap { integration ->
+                    val extIntegrations = ( integrations.filter { !it.gluttony } +
+                                integrations.filter { it.gluttony }
+                            ).flatMap { integration ->
                                 val destLake = lakes.getValue(destinationName)
                                 BasePostgresIterable(
                                         StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
@@ -131,12 +125,12 @@ class IntegrationRunner {
                     val paths = extIntegrations.map { integration ->
                         val destination = lakes.getValue(destinationName)
                         val start = OffsetDateTime.now()
-                        launchLogger.logStarted(integrationConfiguration.name, destination, integration, start)
+                        launchLogger.logStarted(integrationConfiguration.name, integration.destination, start, integrationConfiguration)
                         val ds = try {
                             logger.info("Transferring ${sourceLake.name} with query ${integration.source}")
                             getSourceDataset(sourceLake, integration, session)
                         } catch (ex: Exception) {
-                            launchLogger.logFailed(sourceLakeName, destination, integration, start)
+                            launchLogger.logFailed(sourceLakeName, integration.destination, start, ex)
                             logger.error(
                                     "Integration {} failed going from {} to {}. Exiting.",
                                     integrationConfiguration.name,
@@ -207,7 +201,7 @@ class IntegrationRunner {
                     }
                 }
             } catch (ex: Exception) {
-                launchLogger.logFailed(integrationName, destination, integration, start)
+                launchLogger.logFailed(integrationName, integration.destination, start, ex)
                 logger.error(
                         "Integration {} failed going from {} to {} while merging to master. Exiting.",
                         integrationName,
@@ -239,9 +233,9 @@ class IntegrationRunner {
                         destination.properties
                 )
                 mergeIntoMaster(destination, integrationName, integration, start)
-                launchLogger.logSuccessful(integrationName, destination, integration, start)
+                launchLogger.logSuccessful(integrationName, integration.destination, start)
             } catch (ex: Exception) {
-                launchLogger.logFailed(integrationName, destination, integration, start)
+                launchLogger.logFailed(integrationName, integration.destination, start, ex)
                 logger.error(
                         "Integration {} failed going from {} to {}. Exiting.",
                         integrationName,

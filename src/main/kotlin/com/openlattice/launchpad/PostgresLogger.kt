@@ -1,10 +1,10 @@
 package com.openlattice.launchpad
 
 import com.openlattice.launchpad.configuration.DataLake
-import com.openlattice.launchpad.configuration.Integration
+import com.openlattice.launchpad.configuration.IntegrationConfiguration
 import com.openlattice.launchpad.configuration.IntegrationTables
+import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration
 import com.zaxxer.hikari.HikariDataSource
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.time.OffsetDateTime
@@ -13,21 +13,24 @@ import java.util.*
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
-class LaunchpadLogger(
-        val hds: HikariDataSource,
-        val hostName: String = getHostname()
+class LaunchpadLogger private constructor(
+        val maybeHds: HikariDataSource?,
+        val hostname: String = getHost()
 ) {
+
+    private constructor(): this(null)
+
+    init {
+        if ( maybeHds != null) {
+            createOrUpgradeLoggingTable( maybeHds )
+        }
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(LaunchpadLogger::class.java)
 
         @JvmStatic
-        fun fromLake( lake: DataLake ): LaunchpadLogger {
-            return LaunchpadLogger( lake.getHikariDatasource() )
-        }
-
-        @JvmStatic
-        private final fun getHostname(): String {
+        private final fun getHost(): String {
             return try {
                 val localhost = InetAddress.getLocalHost()
                 if (localhost.hostName.isBlank()) {
@@ -41,107 +44,118 @@ class LaunchpadLogger(
                 id.toString()
             }
         }
+
+        @JvmStatic
+        public final fun createLogger( lakes: Map<String, DataLake>  ): LaunchpadLogger {
+            val maybeLoggerSet = lakes.values.firstOrNull { it.latticeLogger }
+            if ( maybeLoggerSet == null ) {
+                return LaunchpadLogger()
+            }
+            return LaunchpadLogger( maybeLoggerSet.getHikariDatasource() )
+        }
     }
 
-    fun createLoggingTable() {
+    fun createOrUpgradeLoggingTable( hds: HikariDataSource ) {
         hds.connection.use { conn ->
             conn.createStatement().use { stmt ->
                 stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
+            }
+        }
+        val connection = hds.connection
+        connection.autoCommit = false
+        try {
+            for ( upgrade in IntegrationTables.upgrades ) {
+                connection.createStatement().execute( upgrade )
+            }
+            connection.commit()
+        } catch ( ex: Exception ) {
+            connection.rollback()
+        } finally {
+            connection.autoCommit = true
+        }
+    }
+
+    fun logStarted(
+            integrationName: String,
+            destinationTableName: String,
+            start: OffsetDateTime,
+            configuration: IntegrationConfiguration
+    ) {
+        logOrWarn(
+                "Starting integration $integrationName data lake ${destinationTableName}",
+                "Unable to create activity entry in the database. Continuing data transfer..."
+        ) { hds, hostname ->
+            val strippedConfigAsJson = JacksonSerializationConfiguration.jsonMapper.writeValueAsString(configuration)
+            hds.connection.use { connection ->
+                connection.prepareStatement(IntegrationTables.LOG_INTEGRATION_STARTED).use { ps ->
+                    ps.setString(1, integrationName)
+                    ps.setString(2, hostname)
+                    ps.setString(3, destinationTableName)
+                    ps.setObject(4, start)
+                    ps.setString(5, strippedConfigAsJson)
+                    ps.executeUpdate()
+                }
+            }
+        }
+    }
+
+    fun logSuccessful(
+            integrationName: String,
+            destinationTableName: String,
+            start: OffsetDateTime
+    ){
+        logOrWarn(
+                "Integration succeeded",
+                "Unable to log success to database. Continuing data transfer..."
+        ) { hds, hostname ->
+            hds.connection.use { connection ->
+                connection.prepareStatement(IntegrationTables.LOG_SUCCESSFUL_INTEGRATION).use { ps ->
+                    ps.setString(1, integrationName)
+                    ps.setString(2, hostname)
+                    ps.setString(3, destinationTableName)
+                    ps.setObject(4, start)
+                    ps.executeUpdate()
+                }
             }
         }
     }
 
     fun logFailed(
             integrationName: String,
-            destination: DataLake,
-            integration: Integration,
-            start: OffsetDateTime
+            destinationTableName: String,
+            start: OffsetDateTime,
+            exception: Exception
     ) {
         logOrWarn(
-                IntegrationTables.LOG_FAILED_INTEGRATION,
                 "Integration failed",
-                "Unable to log failure to database. Terminating",
-                integrationName,
-                destination,
-                integration,
-                start
-        )
-    }
-
-    fun logStarted(
-            integrationName: String,
-            destination: DataLake,
-            integration: Integration,
-            start: OffsetDateTime
-    ) {
-        logOrWarn(
-                IntegrationTables.LOG_INTEGRATION_STARTED,
-                "Starting integration $integrationName to ${destination.name}",
-                "Unable to create activity entry in the database. Continuing data transfer...",
-                integrationName,
-                destination,
-                integration,
-                start
-        )
-    }
-
-    fun logSuccessful(
-            integrationName: String,
-            destination: DataLake,
-            integration: Integration,
-            start: OffsetDateTime
-    ){
-        logOrWarn(
-                IntegrationTables.LOG_SUCCESSFUL_INTEGRATION,
-                "Integration succeeded",
-                "Unable to log success to database. Continuing data transfer...",
-                integrationName,
-                destination,
-                integration,
-                start
-        )
+                "Unable to log failure to database. Terminating"
+        ) { hds, hostname ->
+            hds.connection.use { connection ->
+                connection.prepareStatement(IntegrationTables.LOG_FAILED_INTEGRATION).use { ps ->
+                    ps.setString(1, exception.toString())
+                    ps.setString(2, integrationName)
+                    ps.setString(3, hostname)
+                    ps.setString(4, destinationTableName)
+                    ps.setObject(5, start)
+                    ps.executeUpdate()
+                }
+            }
+        }
     }
 
     private fun logOrWarn(
-            logSQL: String,
             consoleLoggerString: String,
             failureText: String,
-            integrationName: String,
-            destination: DataLake,
-            integration: Integration,
-            start: OffsetDateTime
+            block: (hds: HikariDataSource, hostname: String) -> Unit
     ) {
-        if (!destination.latticeLogger) {
+        if ( maybeHds == null ) {
             logger.info(consoleLoggerString)
             return
         }
         try {
-            unsafeExecuteSql(
-                    logSQL,
-                    integrationName,
-                    integration,
-                    start
-            )
+            block(maybeHds, hostname)
         } catch (ex: Exception) {
             logger.warn(failureText, ex)
-        }
-    }
-
-    @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doesn't like kotlin")
-    private fun unsafeExecuteSql(
-            sql: String,
-            integrationName: String,
-            integration: Integration,
-            start: OffsetDateTime
-    ) {
-        hds.connection.use { connection ->
-            connection.prepareStatement(sql).use { ps ->
-                ps.setString(1, integrationName)
-                ps.setString(2, hostName)
-                ps.setString(3, integration.destination)
-                ps.setObject(4, start)
-                ps.executeUpdate()
-            }
         }
     }
 }

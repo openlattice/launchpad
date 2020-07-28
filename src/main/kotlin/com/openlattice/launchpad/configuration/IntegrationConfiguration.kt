@@ -22,10 +22,12 @@
 package com.openlattice.launchpad.configuration
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.base.Preconditions
 import com.google.common.collect.ListMultimap
+import com.openlattice.launchpad.configuration.Constants.ACCESS_KEY_ID
 import com.openlattice.launchpad.configuration.Constants.BATCH_SIZE
 import com.openlattice.launchpad.configuration.Constants.DATA_FORMAT
 import com.openlattice.launchpad.configuration.Constants.DEFAULT_DATA_CHUNK_SIZE
@@ -41,6 +43,7 @@ import com.openlattice.launchpad.configuration.Constants.NAME
 import com.openlattice.launchpad.configuration.Constants.PASSWORD
 import com.openlattice.launchpad.configuration.Constants.PROPERTIES
 import com.openlattice.launchpad.configuration.Constants.S3_DRIVER
+import com.openlattice.launchpad.configuration.Constants.SECRET_ACCESS_KEY
 import com.openlattice.launchpad.configuration.Constants.SOURCE
 import com.openlattice.launchpad.configuration.Constants.URL
 import com.openlattice.launchpad.configuration.Constants.USER
@@ -63,8 +66,6 @@ private const val MERGE_SQL         = "mergeSql"
 private const val MASTER_TABLE_SQL  = "masterTableSql"
 
 private const val REGION_NAME       = "regionName"
-private const val ACCESS_KEY_ID     = "accessKeyId"
-private const val SECRET_ACCESS_KEY = "secretAccessKey"
 
 /**
  *
@@ -111,6 +112,7 @@ data class Integration(
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
+@JsonIgnoreProperties(SECRET_ACCESS_KEY, ACCESS_KEY_ID, allowSetters = true)
 data class AwsS3ClientConfiguration(
         @JsonProperty(REGION_NAME) val regionName: String,
         @JsonProperty(ACCESS_KEY_ID) val accessKeyId: String,
@@ -120,6 +122,7 @@ data class AwsS3ClientConfiguration(
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
+@JsonIgnoreProperties(USERNAME, PASSWORD, PROPERTIES, allowSetters = true)
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class DataLake(
         @JsonProperty(NAME) val name: String,

@@ -5,6 +5,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.openlattice.launchpad.configuration.Constants
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
 import com.openlattice.launchpad.configuration.IntegrationRunner
+import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -85,6 +87,26 @@ class LaunchpadSmokeTests {
                 }
             }
         }
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun testJacksonFilterSerialziation() {
+        val dataLakeConfig = IntegrationConfigLoader.fromJdbc.toS3.orcFormat()
+        var asString = JacksonSerializationConfiguration.jsonMapper.writeValueAsString( dataLakeConfig )
+        println(asString)
+        Assert.assertTrue(!asString.contains("testSecretAC"))
+        Assert.assertTrue(!asString.contains("testACID"))
+        Assert.assertTrue(!asString.contains("example_user") )
+        Assert.assertTrue(!asString.contains("examplepassword"))
+
+        val legacyConfig = IntegrationConfigLoader.fromJdbc.toJdbc.implicitFormat()
+        asString = JacksonSerializationConfiguration.jsonMapper.writeValueAsString( legacyConfig )
+        println(asString)
+        Assert.assertTrue(!asString.contains("example_user"))
+        Assert.assertTrue(!asString.contains("examplepassword"))
+        Assert.assertTrue(!asString.contains("oltest") )
+        Assert.assertTrue(!asString.contains("test"))
     }
 
     @Test

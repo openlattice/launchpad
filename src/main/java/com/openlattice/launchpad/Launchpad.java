@@ -31,7 +31,6 @@ public class Launchpad {
 
     private static final Logger logger = LoggerFactory.getLogger( Launchpad.class );
 
-
     public static void main( String[] args ) throws ParseException, IOException {
         CommandLine cl = LaunchpadCli.parseCommandLine( args );
 
