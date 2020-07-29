@@ -101,7 +101,7 @@ class IntegrationRunner {
             // map to lakes if needed. This should be removed once launchpads are upgraded
             val lakes = convertToDataLakesIfPresent(integrationConfiguration)
 
-            val launchLogger = LaunchpadLogger.createLogger( lakes )
+            launchLogger = LaunchpadLogger.createLogger( lakes )
 
             return integrationConfiguration.integrations.map { ( sourceLakeName, destToIntegration )->
                 val sourceLake = lakes.getValue(sourceLakeName)
