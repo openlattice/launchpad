@@ -8,11 +8,13 @@ package com.openlattice.launchpad.configuration
 class IntegrationTables {
     companion object {
 
+        const val INTEGRATION_STATUS_TABLE_NAME = "integration_activity"
+
         /**
          * SQL for appending v2 columns to existing table
          */
         const val UPGRADE_V2= """
-           ALTER TABLE integration_activity
+            ALTER TABLE $INTEGRATION_STATUS_TABLE_NAME
             ADD COLUMN IF NOT EXISTS configuration jsonb not null default '{}'::jsonb, 
             ADD COLUMN IF NOT EXISTS stacktrace text
         """
@@ -25,7 +27,7 @@ class IntegrationTables {
          * SQL query for creating integration table.
          */
         const val CREATE_INTEGRATION_ACTIVITY_SQL = """ 
-            CREATE TABLE IF NOT EXISTS integration_activity
+            CREATE TABLE IF NOT EXISTS $INTEGRATION_STATUS_TABLE_NAME
                 (integration_name text, host_name text, table_name text, start timestamptz DEFAULT 'now()', finish timestamptz DEFAULT 'infinity', result text, configuration json, stacktrace text
             PRIMARY KEY (integration_name, host_name, table_name, start))
         """
@@ -40,7 +42,7 @@ class IntegrationTables {
          * 5. configuration as json
          */
         const val LOG_INTEGRATION_STARTED  = """
-            INSERT INTO integration_activity
+            INSERT INTO $INTEGRATION_STATUS_TABLE_NAME
                 (integration_name, host_name, table_name, start, configuration)
             VALUES (?,?,?,?,?::jsonb)
         """
@@ -54,7 +56,7 @@ class IntegrationTables {
          * 4. start
          */
         const val LOG_SUCCESSFUL_INTEGRATION = """
-            UPDATE integration_activity
+            UPDATE $INTEGRATION_STATUS_TABLE_NAME
             SET finish = now(), result = 'SUCCESS' 
             WHERE integration_name = ? 
                 AND host_name = ? 
@@ -72,7 +74,7 @@ class IntegrationTables {
          * 5. start
          */
         const val LOG_FAILED_INTEGRATION = """
-            UPDATE integration_activity
+            UPDATE $INTEGRATION_STATUS_TABLE_NAME
             SET finish = now(), result = 'FAILED', stacktrace = ?
             WHERE integration_name = ? 
                 AND host_name = ? 
