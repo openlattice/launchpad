@@ -25,6 +25,7 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
+import com.openlattice.launchpad.LaunchpadLogger
 import com.openlattice.launchpad.configuration.Constants.CSV_FORMAT
 import com.openlattice.launchpad.configuration.Constants.FILESYSTEM_DRIVER
 import com.openlattice.launchpad.configuration.Constants.LEGACY_CSV_FORMAT
@@ -38,7 +39,6 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
-import java.net.InetAddress
 import java.time.Clock
 import java.time.OffsetDateTime
 import java.util.*
@@ -53,24 +53,13 @@ class IntegrationRunner {
 
         private val timer = MetricRegistry().timer("uploadTime")
 
-        private val hostName = try {
-            val localhost = InetAddress.getLocalHost()
-            if (localhost.hostName.isBlank()) {
-                localhost.hostAddress
-            } else {
-                localhost.hostName
-            }
-        } catch (ex: Exception) {
-            val id = UUID.randomUUID()
-            logger.warn("Unable to get host for this machine. Using to random id: $id")
-            id.toString()
-        }
+        private lateinit var launchLogger: LaunchpadLogger
 
-        fun configureOrGetSparkSession(integrationConfiguration: IntegrationConfiguration): SparkSession {
+        fun configureOrGetSparkSession( integrationConfiguration: IntegrationConfiguration ): SparkSession {
             val session = SparkSession.builder()
                     .master("local[${Runtime.getRuntime().availableProcessors()}]")
                     .appName("integration")
-            if (integrationConfiguration.awsConfig.isPresent) {
+            if ( integrationConfiguration.awsConfig.isPresent ) {
                 val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
                 val manualConfig = integrationConfiguration.awsConfig.get()
                 session
@@ -109,34 +98,19 @@ class IntegrationRunner {
                 integrationConfiguration: IntegrationConfiguration,
                 session: SparkSession
         ): Map<String, Map<String, List<String>>> {
-            val integrationsMap = integrationConfiguration.integrations
-
             // map to lakes if needed. This should be removed once launchpads are upgraded
             val lakes = convertToDataLakesIfPresent(integrationConfiguration)
 
-            lakes.filter {
-                it.value.latticeLogger
-            }.forEach { (_, destination) ->
-                destination.getHikariDatasource().connection.use { conn ->
-                    conn.createStatement().use { stmt ->
-                        stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
-                    }
-                }
-            }
+            launchLogger = LaunchpadLogger.createLogger( lakes )
 
-            return integrationsMap.map { sources ->
-                val sourceLakeName = sources.key
-                val destToIntegration = sources.value
+            return integrationConfiguration.integrations.map { ( sourceLakeName, destToIntegration )->
                 val sourceLake = lakes.getValue(sourceLakeName)
-                val value = Multimaps.asMap(destToIntegration).map { destinations ->
-                    val destinationName = destinations.key
-                    val integrations = destinations.value
-                    val extIntegrations = integrations.filter { !it.gluttony } + integrations
-                            .filter { it.gluttony }
+                val value = Multimaps.asMap(destToIntegration).map { ( destinationLakeName, integrations ) ->
+                    val destination = lakes.getValue(destinationLakeName)
+                    val extIntegrations = integrations.filter { !it.gluttony } + integrations.filter { it.gluttony }
                             .flatMap { integration ->
-                                val destLake = lakes.getValue(destinationName)
                                 BasePostgresIterable(
-                                        StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
+                                        StatementHolderSupplier(destination.getHikariDatasource(), integration.source)
                                 ) { rs ->
                                     //TODO: Add support for reading gluttony flag, master sql, upsert sql.
                                     Integration(
@@ -148,15 +122,13 @@ class IntegrationRunner {
                             }
 
                     val paths = extIntegrations.map { integration ->
-                        val destination = lakes.getValue(destinationName)
-                        logger.info("Running integration: {}", integration)
                         val start = OffsetDateTime.now()
-                        logStarted(integrationConfiguration.name, destination, integration, start)
+                        launchLogger.logStarted(integrationConfiguration.name, integration.destination, start, integrationConfiguration)
                         val ds = try {
                             logger.info("Transferring ${sourceLake.name} with query ${integration.source}")
                             getSourceDataset(sourceLake, integration, session)
                         } catch (ex: Exception) {
-                            logFailed(sourceLakeName, destination, integration, start)
+                            launchLogger.logFailed(sourceLakeName, integration.destination, start, ex)
                             logger.error(
                                     "Integration {} failed going from {} to {}. Exiting.",
                                     integrationConfiguration.name,
@@ -164,7 +136,6 @@ class IntegrationRunner {
                                     integration.destination,
                                     ex
                             )
-
                             kotlin.system.exitProcess(1)
                         }
                         logger.info("Read from source: {}", sourceLake)
@@ -205,7 +176,7 @@ class IntegrationRunner {
                         logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
                         destinationPath
                     }
-                    destinationName to paths
+                    destinationLakeName to paths
                 }.toMap()
                 sourceLakeName to value
             }.toMap()
@@ -227,7 +198,7 @@ class IntegrationRunner {
                     }
                 }
             } catch (ex: Exception) {
-                logFailed(integrationName, destination, integration, start)
+                launchLogger.logFailed(integrationName, integration.destination, start, ex)
                 logger.error(
                         "Integration {} failed going from {} to {} while merging to master. Exiting.",
                         integrationName,
@@ -259,9 +230,9 @@ class IntegrationRunner {
                         destination.properties
                 )
                 mergeIntoMaster(destination, integrationName, integration, start)
-                logSuccessful(integrationName, destination, integration, start)
+                launchLogger.logSuccessful(integrationName, integration.destination, start)
             } catch (ex: Exception) {
-                logFailed(integrationName, destination, integration, start)
+                launchLogger.logFailed(integrationName, integration.destination, start, ex)
                 logger.error(
                         "Integration {} failed going from {} to {}. Exiting.",
                         integrationName,
@@ -271,94 +242,6 @@ class IntegrationRunner {
                 )
 
                 kotlin.system.exitProcess(1)
-            }
-        }
-
-        private fun logStarted(
-                integrationName: String,
-                destination: DataLake,
-                integration: Integration,
-                start: OffsetDateTime
-        ) {
-            if (!destination.latticeLogger) {
-                logger.info("Starting integration $integrationName to ${destination.name}")
-                return
-            }
-            try {
-                unsafeExecuteSql(
-                        IntegrationTables.LOG_INTEGRATION_STARTED,
-                        integrationName,
-                        destination,
-                        integration,
-                        start
-                )
-            } catch (ex: Exception) {
-                logger.warn("Unable to create activity entry in the database. Continuing data transfer...", ex)
-            }
-        }
-
-        @SuppressFBWarnings(value = ["OBL_UNSATISFIED_OBLIGATION"], justification = "Spotbugs doesn't like kotlin")
-        private fun unsafeExecuteSql(
-                sql: String,
-                integrationName: String,
-                destination: DataLake,
-                integration: Integration,
-                start: OffsetDateTime
-        ) {
-            destination.getHikariDatasource().connection.use { connection ->
-                connection.prepareStatement(sql).use { ps ->
-                    ps.setString(1, integrationName)
-                    ps.setString(2, hostName)
-                    ps.setString(3, integration.destination)
-                    ps.setObject(4, start)
-                    ps.executeUpdate()
-                }
-            }
-        }
-
-        private fun logSuccessful(
-                integrationName: String,
-                destination: DataLake,
-                integration: Integration,
-                start: OffsetDateTime
-        ) {
-            if (!destination.latticeLogger) {
-                logger.info("Integration succeeded")
-                return
-            }
-            try {
-                unsafeExecuteSql(
-                        IntegrationTables.LOG_SUCCESSFUL_INTEGRATION,
-                        integrationName,
-                        destination,
-                        integration,
-                        start
-                )
-            } catch (ex: Exception) {
-                logger.warn("Unable to log success to database. Continuing data transfer...", ex)
-            }
-        }
-
-        fun logFailed(
-                integrationName: String,
-                destination: DataLake,
-                integration: Integration,
-                start: OffsetDateTime
-        ) {
-            if (!destination.latticeLogger) {
-                logger.info("Integration failed")
-                return
-            }
-            try {
-                unsafeExecuteSql(
-                        IntegrationTables.LOG_FAILED_INTEGRATION,
-                        integrationName,
-                        destination,
-                        integration,
-                        start
-                )
-            } catch (ex: Exception) {
-                logger.warn("Unable to log failure to database. Terminating", ex)
             }
         }
 

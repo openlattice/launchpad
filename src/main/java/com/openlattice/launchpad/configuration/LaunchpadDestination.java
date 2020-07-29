@@ -21,6 +21,7 @@
 
 package com.openlattice.launchpad.configuration;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
@@ -35,12 +36,33 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import static com.openlattice.launchpad.configuration.Constants.*;
+import static com.openlattice.launchpad.configuration.Constants.BATCH_SIZE;
+import static com.openlattice.launchpad.configuration.Constants.CONNECTION_TIMEOUT;
+import static com.openlattice.launchpad.configuration.Constants.CSV_FORMAT;
+import static com.openlattice.launchpad.configuration.Constants.DATA_FORMAT;
+import static com.openlattice.launchpad.configuration.Constants.DEFAULT_DATA_CHUNK_SIZE;
+import static com.openlattice.launchpad.configuration.Constants.DEFAULT_WRITE_MODE;
+import static com.openlattice.launchpad.configuration.Constants.DRIVER;
+import static com.openlattice.launchpad.configuration.Constants.FILESYSTEM_DRIVER;
+import static com.openlattice.launchpad.configuration.Constants.JDBC_URL;
+import static com.openlattice.launchpad.configuration.Constants.LEGACY_CSV_FORMAT;
+import static com.openlattice.launchpad.configuration.Constants.MAXIMUM_POOL_SIZE;
+import static com.openlattice.launchpad.configuration.Constants.NAME;
+import static com.openlattice.launchpad.configuration.Constants.NON_JDBC_DRIVERS;
+import static com.openlattice.launchpad.configuration.Constants.ORC_FORMAT;
+import static com.openlattice.launchpad.configuration.Constants.PASSWORD;
+import static com.openlattice.launchpad.configuration.Constants.PROPERTIES;
+import static com.openlattice.launchpad.configuration.Constants.S3_DRIVER;
+import static com.openlattice.launchpad.configuration.Constants.URL;
+import static com.openlattice.launchpad.configuration.Constants.USER;
+import static com.openlattice.launchpad.configuration.Constants.USERNAME;
+import static com.openlattice.launchpad.configuration.Constants.WRITE_MODE;
 
 /**
  * @author Matthew Tamayo-Rios &lt;matthew@openlattice.com&gt;
  */
 @Deprecated
+@JsonFilter(Constants.CREDENTIALS_FILTER)
 public class LaunchpadDestination {
 
     private static final Logger      logger = LoggerFactory.getLogger( LaunchpadDestination.class );
