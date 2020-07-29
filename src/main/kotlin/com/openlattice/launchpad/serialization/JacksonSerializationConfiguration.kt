@@ -47,7 +47,12 @@ class JacksonSerializationConfiguration {
         }
 
         protected fun registerModules(mapper: ObjectMapper, filteredProperties: Set<String> = setOf()): ObjectMapper {
-            val filterProvider = SimpleFilterProvider().addFilter( Constants.CREDENTIALS_FILTER, SimpleBeanPropertyFilter.SerializeExceptFilter(filteredProperties))
+            val propertyFilter = if ( filteredProperties.isEmpty() ) {
+                SimpleBeanPropertyFilter.SerializeExceptFilter.serializeAll()
+            } else {
+                SimpleBeanPropertyFilter.SerializeExceptFilter(filteredProperties)
+            }
+            val filterProvider = SimpleFilterProvider().addFilter( Constants.CREDENTIALS_FILTER, propertyFilter )
             mapper.registerModule(Jdk8Module())
             mapper.registerModule(GuavaModule())
             mapper.registerModule(JodaModule())

@@ -16,29 +16,32 @@ import java.time.OffsetDateTime
  */
 class IntegrationValidator {
     companion object {
-
         private val logger = LoggerFactory.getLogger(IntegrationRunner::class.java)
 
         private val timer = MetricRegistry().timer("validateTimer")
 
-        fun validateIntegration(integrationConfiguration: IntegrationConfiguration, integrationPaths: Map<String, Map<String, List<String>>>, vararg sortColumns: String ) {
+        private lateinit var launchLogger: LaunchpadLogger
+
+        fun validateIntegration(
+                integrationConfiguration: IntegrationConfiguration,
+                integrationPaths: Map<String, Map<String, List<String>>>,
+                vararg sortColumns: String
+        ) {
             val integrationsMap = integrationConfiguration.integrations
 
             // map to lakes if needed. This should be removed once launchpads are upgraded
             val lakes = IntegrationRunner.convertToDataLakesIfPresent(integrationConfiguration)
 
-            val launchLogger = LaunchpadLogger.createLogger( lakes )
+            launchLogger = LaunchpadLogger.createLogger( lakes )
 
             val session = IntegrationRunner.configureOrGetSparkSession(integrationConfiguration)
 
             integrationsMap.forEach { sourceLakeName, destToIntegration ->
                 val sourceLake = lakes.getValue( sourceLakeName )
                 Multimaps.asMap(destToIntegration).forEach { destinationLakeName, integrations ->
-                    val extIntegrations = integrations.filter { !it.gluttony } + integrations
-                            .filter { it.gluttony }
+                    val destLake = lakes.getValue(destinationLakeName)
+                    val extIntegrations = integrations.filter { !it.gluttony } + integrations.filter { it.gluttony }
                             .flatMap { integration ->
-
-                                val destLake = lakes.getValue(destinationLakeName)
                                 BasePostgresIterable(
                                         StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
                                 ) { rs ->

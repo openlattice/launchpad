@@ -103,15 +103,14 @@ class IntegrationRunner {
 
             val launchLogger = LaunchpadLogger.createLogger( lakes )
 
-            return integrationConfiguration.integrations.map { (sourceLakeName, destToIntegration )->
+            return integrationConfiguration.integrations.map { ( sourceLakeName, destToIntegration )->
                 val sourceLake = lakes.getValue(sourceLakeName)
-                val value = Multimaps.asMap(destToIntegration).map { ( destinationName, integrations ) ->
-                    val extIntegrations = ( integrations.filter { !it.gluttony } +
-                                integrations.filter { it.gluttony }
-                            ).flatMap { integration ->
-                                val destLake = lakes.getValue(destinationName)
+                val value = Multimaps.asMap(destToIntegration).map { ( destinationLakeName, integrations ) ->
+                    val destination = lakes.getValue(destinationLakeName)
+                    val extIntegrations = integrations.filter { !it.gluttony } + integrations.filter { it.gluttony }
+                            .flatMap { integration ->
                                 BasePostgresIterable(
-                                        StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
+                                        StatementHolderSupplier(destination.getHikariDatasource(), integration.source)
                                 ) { rs ->
                                     //TODO: Add support for reading gluttony flag, master sql, upsert sql.
                                     Integration(
@@ -123,7 +122,6 @@ class IntegrationRunner {
                             }
 
                     val paths = extIntegrations.map { integration ->
-                        val destination = lakes.getValue(destinationName)
                         val start = OffsetDateTime.now()
                         launchLogger.logStarted(integrationConfiguration.name, integration.destination, start, integrationConfiguration)
                         val ds = try {
@@ -138,7 +136,6 @@ class IntegrationRunner {
                                     integration.destination,
                                     ex
                             )
-
                             kotlin.system.exitProcess(1)
                         }
                         logger.info("Read from source: {}", sourceLake)
@@ -179,7 +176,7 @@ class IntegrationRunner {
                         logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
                         destinationPath
                     }
-                    destinationName to paths
+                    destinationLakeName to paths
                 }.toMap()
                 sourceLakeName to value
             }.toMap()
