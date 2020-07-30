@@ -101,7 +101,13 @@ class IntegrationRunner {
             // map to lakes if needed. This should be removed once launchpads are upgraded
             val lakes = convertToDataLakesIfPresent(integrationConfiguration)
 
-            launchLogger = LaunchpadLogger.createLogger( lakes )
+            try {
+                launchLogger = LaunchpadLogger.createLogger( lakes )
+            } catch ( ex: Exception ) {
+                logger.error("Unable to create launchpad logger. " +
+                        "The likliest possibilities are the connection timed out due to a firewall rule " +
+                        "or there is an error in the config file for the datalake with launchpadLogger set to true", ex)
+            }
 
             return integrationConfiguration.integrations.map { ( sourceLakeName, destToIntegration )->
                 val sourceLake = lakes.getValue(sourceLakeName)
