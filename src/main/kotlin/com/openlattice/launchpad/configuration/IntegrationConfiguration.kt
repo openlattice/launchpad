@@ -38,6 +38,7 @@ import com.openlattice.launchpad.configuration.Constants.DRIVER
 import com.openlattice.launchpad.configuration.Constants.FETCH_SIZE
 import com.openlattice.launchpad.configuration.Constants.FILESYSTEM_DRIVER
 import com.openlattice.launchpad.configuration.Constants.HEADER
+import com.openlattice.launchpad.configuration.Constants.JDBC_URL
 import com.openlattice.launchpad.configuration.Constants.LATTICE_LOGGER
 import com.openlattice.launchpad.configuration.Constants.NAME
 import com.openlattice.launchpad.configuration.Constants.PASSWORD
@@ -153,6 +154,7 @@ data class DataLake(
                     logger.warn("Connecting to $name with a blank password.")
                 }
                 if ( properties.isEmpty ){
+                    properties.put(JDBC_URL, url)
                     properties.put(Constants.MAXIMUM_POOL_SIZE, "1")
                     properties.put(Constants.CONNECTION_TIMEOUT, "120000") //2-minute connection timeout
                     properties.put(USER, username)
