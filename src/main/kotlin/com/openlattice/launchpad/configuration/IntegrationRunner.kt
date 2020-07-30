@@ -113,8 +113,8 @@ class IntegrationRunner {
                 val sourceLake = lakes.getValue(sourceLakeName)
                 val value = Multimaps.asMap(destToIntegration).map { ( destinationLakeName, integrations ) ->
                     val destination = lakes.getValue(destinationLakeName)
-                    val extIntegrations = integrations.filter { !it.gluttony } + integrations.filter { it.gluttony }
-                            .flatMap { integration ->
+                    val extIntegrations = integrations.filter { !it.gluttony } +
+                            integrations.filter { it.gluttony }.flatMap { integration ->
                                 BasePostgresIterable(
                                         StatementHolderSupplier(destination.getHikariDatasource(), integration.source)
                                 ) { rs ->

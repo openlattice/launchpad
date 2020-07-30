@@ -56,22 +56,26 @@ class LaunchpadLogger private constructor(
     }
 
     fun createOrUpgradeLoggingTable( hds: HikariDataSource ) {
-        hds.connection.use { conn ->
-            conn.createStatement().use { stmt ->
+        hds.connection.use { connection ->
+            connection.createStatement().use { stmt ->
                 stmt.execute(IntegrationTables.CREATE_INTEGRATION_ACTIVITY_SQL)
             }
-        }
-        val connection = hds.connection
-        connection.autoCommit = false
-        try {
-            for ( upgrade in IntegrationTables.upgrades ) {
-                connection.createStatement().execute( upgrade )
+            try {
+                logger.info("Upgrading integration status table")
+                connection.autoCommit = false
+                for ( upgrade in IntegrationTables.upgrades ) {
+                    logger.info("Applying status table upgrade {}", upgrade)
+                    connection.createStatement().use { stmt ->
+                        stmt.execute( upgrade )
+                    }
+                }
+                connection.commit()
+            } catch ( ex: Exception ) {
+                logger.error("Exception occurred while upgrading logging table, rolling back", ex)
+                connection.rollback()
+            } finally {
+                connection.autoCommit = true
             }
-            connection.commit()
-        } catch ( ex: Exception ) {
-            connection.rollback()
-        } finally {
-            connection.autoCommit = true
         }
     }
 
@@ -148,14 +152,14 @@ class LaunchpadLogger private constructor(
             failureText: String,
             block: (hds: HikariDataSource, hostname: String) -> Unit
     ) {
+        logger.info(consoleLoggerString)
         if ( maybeHds == null ) {
-            logger.info(consoleLoggerString)
             return
         }
         try {
             block(maybeHds, hostname)
         } catch (ex: Exception) {
-            logger.warn(failureText, ex)
+            logger.error(failureText, ex)
         }
     }
 }

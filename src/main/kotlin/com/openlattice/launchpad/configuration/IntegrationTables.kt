@@ -28,7 +28,7 @@ class IntegrationTables {
          */
         const val CREATE_INTEGRATION_ACTIVITY_SQL = """ 
             CREATE TABLE IF NOT EXISTS $INTEGRATION_STATUS_TABLE_NAME
-                ( integration_name text, host_name text, table_name text, start timestamptz DEFAULT 'now()', finish timestamptz DEFAULT 'infinity', result text, configuration json, stacktrace text, 
+                ( integration_name text, host_name text, table_name text, start timestamptz DEFAULT now(), finish timestamptz DEFAULT 'infinity', result text, configuration json, stacktrace text, 
             PRIMARY KEY (integration_name, host_name, table_name, start))
         """
 
