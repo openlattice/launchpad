@@ -59,6 +59,11 @@ class IntegrationRunner {
             val session = SparkSession.builder()
                     .master("local[${Runtime.getRuntime().availableProcessors()}]")
                     .appName("integration")
+            if ( integrationConfiguration.extraSparkParameters.isPresent ) {
+                integrationConfiguration.extraSparkParameters.get().forEach { k, v ->
+                    session.config(k, v )
+                }
+            }
             if ( integrationConfiguration.awsConfig.isPresent ) {
                 val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
                 val manualConfig = integrationConfiguration.awsConfig.get()

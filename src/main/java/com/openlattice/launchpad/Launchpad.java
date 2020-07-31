@@ -82,6 +82,7 @@ public class Launchpad {
                     config.getAwsConfig(),
                     Optional.empty(),
                     Optional.empty(),
+                    Optional.empty(),
                     Optional.of(lakes),
                     config.getIntegrations()
             );
