@@ -66,6 +66,7 @@ private const val GLUTTONY          = "gluttony"
 private const val MERGE_SQL         = "mergeSql"
 private const val MASTER_TABLE_SQL  = "masterTableSql"
 
+private const val EXTRA_SPARK_PARAMETERS = "sparkParameters"
 private const val REGION_NAME       = "regionName"
 
 /**
@@ -77,6 +78,7 @@ data class IntegrationConfiguration(
         @JsonProperty(NAME) val name: String,
         @JsonProperty(DESCRIPTION) val description: String,
         @JsonProperty(AWS_CONFIG) val awsConfig: Optional<AwsS3ClientConfiguration>,
+        @JsonProperty(EXTRA_SPARK_PARAMETERS) val extraSparkParameters: Optional<Map<String, String>>,
         @JsonProperty(DATASOURCES) val datasources: Optional<List<LaunchpadDatasource>>,
         @JsonProperty(DESTINATIONS) val destinations: Optional<List<LaunchpadDestination>>,
         @JsonProperty(DATA_LAKES) val datalakes: Optional<List<DataLake>>,

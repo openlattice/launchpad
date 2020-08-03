@@ -59,6 +59,11 @@ class IntegrationRunner {
             val session = SparkSession.builder()
                     .master("local[${Runtime.getRuntime().availableProcessors()}]")
                     .appName("integration")
+            if ( integrationConfiguration.extraSparkParameters.isPresent ) {
+                integrationConfiguration.extraSparkParameters.get().forEach { k, v ->
+                    session.config(k, v )
+                }
+            }
             if ( integrationConfiguration.awsConfig.isPresent ) {
                 val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
                 val manualConfig = integrationConfiguration.awsConfig.get()
@@ -113,8 +118,8 @@ class IntegrationRunner {
                 val sourceLake = lakes.getValue(sourceLakeName)
                 val value = Multimaps.asMap(destToIntegration).map { ( destinationLakeName, integrations ) ->
                     val destination = lakes.getValue(destinationLakeName)
-                    val extIntegrations = integrations.filter { !it.gluttony } + integrations.filter { it.gluttony }
-                            .flatMap { integration ->
+                    val extIntegrations = integrations.filter { !it.gluttony } +
+                            integrations.filter { it.gluttony }.flatMap { integration ->
                                 BasePostgresIterable(
                                         StatementHolderSupplier(destination.getHikariDatasource(), integration.source)
                                 ) { rs ->
