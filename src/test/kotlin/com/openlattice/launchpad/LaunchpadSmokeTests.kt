@@ -10,6 +10,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Paths
@@ -24,6 +25,7 @@ class LaunchpadSmokeTests {
     }
 
     companion object {
+        val logger = LoggerFactory.getLogger(LaunchpadSmokeTests::class.java)
         @JvmStatic
         fun runTestValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
             IntegrationRunner.configureOrGetSparkSession( config ).use { session ->
@@ -158,7 +160,7 @@ class LaunchpadSmokeTests {
         runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
-    @Test
+    @Ignore
     @Throws(IOException::class)
     fun runFsCsvJdbcIntegration() {
         val config = IntegrationConfigLoader.fromCsv.toJdbc.implicitFormat()
