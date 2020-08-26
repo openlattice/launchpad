@@ -131,23 +131,34 @@ dependencies {
 
     compile "commons-cli:commons-cli:$commons_cli_version"
 
+    compile "com.google.guava:guava:${guava_version}"
+
+    /*
+     * SQL
+     */
     compile "com.zaxxer:HikariCP:${hikariCP_version}"
     compile "com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8"
     compile "org.postgresql:postgresql:${postgresql_version}"
     compile fileTree(dir: 'lib/', include: '*.jar')
 
-
-    compile "com.google.guava:guava:${guava_version}"
-
+    /*
+     * SPARK
+     */
     compile "org.apache.spark:spark-core_2.11:${spark_version}"
     compile "org.apache.spark:spark-sql_2.11:${spark_version}"
-    
+
     compile "org.apache.hadoop:hadoop-aws:${hadoop_version}"
     compile "org.apache.hadoop:hadoop-hdfs:${hadoop_version}"
     compile "org.apache.hadoop:hadoop-common:${hadoop_version}"
 
+    /*
+     * AWS
+     */
     compile "com.amazonaws:aws-java-sdk-bundle:${aws_sdk_version}"
 
+    /*
+     * Jackson
+     */
     compile "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
     compile "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jackson_version}"

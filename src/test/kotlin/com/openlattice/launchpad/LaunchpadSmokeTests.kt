@@ -157,4 +157,11 @@ class LaunchpadSmokeTests {
         val config = IntegrationConfigLoader.fromJdbc.toS3.csvFormat()
         runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
+
+    @Test
+    @Throws(IOException::class)
+    fun runFsCsvJdbcIntegration() {
+        val config = IntegrationConfigLoader.fromCsv.toJdbc.implicitFormat()
+        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+    }
 }
