@@ -8,7 +8,7 @@ datalakes:
     driver: org.postgresql.Driver
     fetchSize: 20000
   - name: localdb
-    url: "jdbc:postgresql://localhost:5432/local_example_integration"
+    url: "jdbc:postgresql://localhost:5432/example_integration"
     driver: org.postgresql.Driver
     username: "oltest"
     password: "test"
