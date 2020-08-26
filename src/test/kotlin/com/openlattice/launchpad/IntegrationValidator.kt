@@ -77,7 +77,7 @@ class IntegrationValidator {
 
                         val destinationData = try {
                             logger.info("Reading ${destination.name} with destination query ${integration.destination}")
-                            IntegrationRunner.getDataset(destination, paths.next(), session, true)
+                            IntegrationRunner.getDataset(destination, paths.next(), session)
                         } catch (ex: Exception) {
                             launchLogger.logFailed(sourceLakeName, integration.destination, start, ex)
                             logger.error(
