@@ -2,7 +2,7 @@ name: "example_fs_csv_to_jdbc"
 description: "Copying over data from local table into .csv file"
 datalakes:
   - name: localdb
-    url: "jdbc:postgresql://localhost:5432/local_example_integration"
+    url: "jdbc:postgresql://localhost:5432/example_integration"
     driver: org.postgresql.Driver
     latticeLogger: true
     username: "oltest"
