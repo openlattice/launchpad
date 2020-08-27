@@ -267,17 +267,16 @@ class IntegrationRunner {
                 lake: DataLake, fileOrTableName: String, sparkSession: SparkSession
         ): Dataset<Row> {
             logger.info("reading from $fileOrTableName")
-            val locationAsPath = Paths.get(lake.url, fileOrTableName)
             when (lake.dataFormat) {
                 CSV_FORMAT, LEGACY_CSV_FORMAT -> return sparkSession
                         .read()
                         .option("header", lake.header)
                         .option("inferSchema", !lake.header )
-                        .csv(locationAsPath.toString())
+                        .csv(Paths.get(lake.url, fileOrTableName).toString())
                 ORC_FORMAT -> return sparkSession
                         .read()
                         .option("inferSchema", true)
-                        .orc(locationAsPath.toString())
+                        .orc("${lake.url}/$fileOrTableName")
                 else -> return sparkSession
                         .read()
                         .format("jdbc")
