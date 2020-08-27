@@ -54,7 +54,7 @@ class LaunchpadSmokeTests {
                                 // s3 => delete dest file/folder
                                 val s3Client = AmazonS3ClientBuilder.standard()
                                         .withRegion(config.awsConfig.get().regionName)
-                                        .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                                        .withCredentials(DefaultAWSCredentialsProviderChain())
                                         .build()
 
                                 val parts = URI(destination.url).schemeSpecificPart.split('/').iterator()

@@ -66,7 +66,7 @@ class IntegrationRunner {
                 }
             }
             if ( integrationConfiguration.awsConfig.isPresent ) {
-                val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
+                val config = DefaultAWSCredentialsProviderChain().credentials
                 val manualConfig = integrationConfiguration.awsConfig.get()
                 session
                         .config("fs.s3a.access.key", config.awsAccessKeyId)
