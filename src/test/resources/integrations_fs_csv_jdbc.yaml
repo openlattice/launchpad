@@ -1,0 +1,20 @@
+name: "example_fs_csv_to_jdbc"
+description: "Copying over data from local table into .csv file"
+datalakes:
+  - name: localdb
+    url: "jdbc:postgresql://localhost:5432/example_integration"
+    driver: org.postgresql.Driver
+    latticeLogger: true
+    username: "oltest"
+    password: "test"
+  - name: csvFile
+    url: "/tmp/csv-integ-test/csvFile-2020-08-26T18:39:28.578576Z/"
+    driver: "filesystem"
+    dataFormat: "csv"
+    header: true
+integrations:
+  csvFile:
+    localdb:
+      - source: part-00000-7dcae742-5934-40db-9fc3-522085acee2f-c000.csv
+        destination: "test_csv_integration"
+        description: "Some other integration"

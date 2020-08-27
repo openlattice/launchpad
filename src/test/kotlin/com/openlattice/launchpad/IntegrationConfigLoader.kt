@@ -17,6 +17,15 @@ class IntegrationConfigLoader {
         }
     }
 
+    object fromCsv {
+        object toJdbc {
+            @Throws(IOException::class)
+            fun implicitFormat(): IntegrationConfiguration {
+                return asYaml("integrations_fs_csv_jdbc.yaml")
+            }
+        }
+    }
+
     object fromJdbc {
         object toOracle {
             @Throws(IOException::class)

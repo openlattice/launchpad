@@ -1,13 +1,12 @@
 name: "example_jdbc_to_fs_csv"
 description: "Copying over data from local table into .csv file"
-datasources:
+datalakes:
   - name: remotedb
     url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
     username: "example_user"
     password: "examplepassword"
     driver: org.postgresql.Driver
     fetchSize: 20000
-destinations:
   - name: csvFile
     url: "/tmp/csv-integ-test"
     driver: "filesystem"

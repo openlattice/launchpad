@@ -10,6 +10,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Paths
@@ -24,6 +25,7 @@ class LaunchpadSmokeTests {
     }
 
     companion object {
+        val logger = LoggerFactory.getLogger(LaunchpadSmokeTests::class.java)
         @JvmStatic
         fun runTestValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
             IntegrationRunner.configureOrGetSparkSession( config ).use { session ->
@@ -52,7 +54,7 @@ class LaunchpadSmokeTests {
                                 // s3 => delete dest file/folder
                                 val s3Client = AmazonS3ClientBuilder.standard()
                                         .withRegion(config.awsConfig.get().regionName)
-                                        .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                                        .withCredentials(DefaultAWSCredentialsProviderChain())
                                         .build()
 
                                 val parts = URI(destination.url).schemeSpecificPart.split('/').iterator()
@@ -155,6 +157,13 @@ class LaunchpadSmokeTests {
     @Throws(IOException::class)
     fun runJdbcS3CsvIntegration() {
         val config = IntegrationConfigLoader.fromJdbc.toS3.csvFormat()
+        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+    }
+
+    @Ignore
+    @Throws(IOException::class)
+    fun runFsCsvJdbcIntegration() {
+        val config = IntegrationConfigLoader.fromCsv.toJdbc.implicitFormat()
         runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 }

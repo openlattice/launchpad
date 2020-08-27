@@ -39,6 +39,7 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+import java.nio.file.Paths
 import java.time.Clock
 import java.time.OffsetDateTime
 import java.util.*
@@ -65,7 +66,7 @@ class IntegrationRunner {
                 }
             }
             if ( integrationConfiguration.awsConfig.isPresent ) {
-                val config = DefaultAWSCredentialsProviderChain.getInstance().credentials
+                val config = DefaultAWSCredentialsProviderChain().credentials
                 val manualConfig = integrationConfiguration.awsConfig.get()
                 session
                         .config("fs.s3a.access.key", config.awsAccessKeyId)
@@ -262,15 +263,16 @@ class IntegrationRunner {
         }
 
         @JvmStatic
-        fun getDataset(
-                lake: DataLake, fileOrTableName: String, sparkSession: SparkSession, knownHeader: Boolean = false
+        internal fun getDataset(
+                lake: DataLake, fileOrTableName: String, sparkSession: SparkSession
         ): Dataset<Row> {
+            logger.info("reading from $fileOrTableName")
             when (lake.dataFormat) {
                 CSV_FORMAT, LEGACY_CSV_FORMAT -> return sparkSession
                         .read()
-                        .option("header", if (knownHeader) true else lake.header)
-                        .option("inferSchema", true)
-                        .csv("${lake.url}/$fileOrTableName")
+                        .option("header", lake.header)
+                        .option("inferSchema", !lake.header )
+                        .csv(Paths.get(lake.url, fileOrTableName).toString())
                 ORC_FORMAT -> return sparkSession
                         .read()
                         .option("inferSchema", true)
