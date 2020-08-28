@@ -13,6 +13,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.spark.sql.SparkSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,6 @@ public class Launchpad {
     private static final ObjectMapper mapper            = JacksonSerializationConfiguration.yamlMapper;
 
     private static final Logger logger = LoggerFactory.getLogger( Launchpad.class );
-
 
     public static void main( String[] args ) throws ParseException, IOException {
         CommandLine cl = LaunchpadCli.parseCommandLine( args );
@@ -59,7 +59,11 @@ public class Launchpad {
             System.exit( -1 );
         }
 
-        IntegrationRunner.runIntegrations( config );
+        try ( SparkSession session = IntegrationRunner.Companion.configureOrGetSparkSession( config )) {
+            IntegrationRunner.runIntegrations( config, session );
+        } catch ( Exception ex ) {
+            logger.error( "Exception running launchpad integration", ex);
+        }
     }
 
     public static IntegrationConfiguration convertToDataLakes( IntegrationConfiguration config ) {
@@ -76,6 +80,7 @@ public class Launchpad {
                     config.getName(),
                     config.getDescription(),
                     config.getAwsConfig(),
+                    Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
                     Optional.of(lakes),

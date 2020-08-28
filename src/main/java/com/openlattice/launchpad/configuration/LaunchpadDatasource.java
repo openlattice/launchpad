@@ -21,6 +21,7 @@
 
 package com.openlattice.launchpad.configuration;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
@@ -31,12 +32,31 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import static com.openlattice.launchpad.configuration.Constants.*;
+import static com.openlattice.launchpad.configuration.Constants.CONNECTION_TIMEOUT;
+import static com.openlattice.launchpad.configuration.Constants.CSV_FORMAT;
+import static com.openlattice.launchpad.configuration.Constants.DEFAULT_DATA_CHUNK_SIZE;
+import static com.openlattice.launchpad.configuration.Constants.DEFAULT_WRITE_MODE;
+import static com.openlattice.launchpad.configuration.Constants.DRIVER;
+import static com.openlattice.launchpad.configuration.Constants.FETCH_SIZE;
+import static com.openlattice.launchpad.configuration.Constants.FILESYSTEM_DRIVER;
+import static com.openlattice.launchpad.configuration.Constants.HEADER;
+import static com.openlattice.launchpad.configuration.Constants.LEGACY_CSV_FORMAT;
+import static com.openlattice.launchpad.configuration.Constants.MAXIMUM_POOL_SIZE;
+import static com.openlattice.launchpad.configuration.Constants.NAME;
+import static com.openlattice.launchpad.configuration.Constants.NON_JDBC_DRIVERS;
+import static com.openlattice.launchpad.configuration.Constants.ORC_FORMAT;
+import static com.openlattice.launchpad.configuration.Constants.PASSWORD;
+import static com.openlattice.launchpad.configuration.Constants.S3_DRIVER;
+import static com.openlattice.launchpad.configuration.Constants.UNKNOWN;
+import static com.openlattice.launchpad.configuration.Constants.URL;
+import static com.openlattice.launchpad.configuration.Constants.USER;
+import static com.openlattice.launchpad.configuration.Constants.USERNAME;
 
 /**
  * Represents a name for data integrations.
  */
 @Deprecated
+@JsonFilter(Constants.CREDENTIALS_FILTER)
 public class LaunchpadDatasource {
     private static final Logger logger = LoggerFactory.getLogger( LaunchpadDestination.class );
 
@@ -79,6 +99,14 @@ public class LaunchpadDatasource {
     }
 
     public DataLake asDataLake() {
+
+        final Properties properties = new Properties();
+        properties.put(MAXIMUM_POOL_SIZE, "1");
+        properties.put(CONNECTION_TIMEOUT, "120000"); //2-minute connection timeout
+        properties.setProperty( USER, username );
+        properties.setProperty( USERNAME, username );
+        properties.setProperty( PASSWORD, password );
+
         String lakeDataFormat = "";
         String lakeDriver = "";
         switch ( driver ){
@@ -116,7 +144,7 @@ public class LaunchpadDatasource {
                 DEFAULT_DATA_CHUNK_SIZE,
                 DEFAULT_WRITE_MODE,
                 false,
-                new Properties());
+                properties);
     }
 
     @JsonProperty( HEADER )

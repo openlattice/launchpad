@@ -34,7 +34,12 @@ object Constants  {
     const val S3_DRIVER = "s3"
     const val UNKNOWN = "unknown"
 
+    const val ACCESS_KEY_ID     = "accessKeyId"
+    const val SECRET_ACCESS_KEY = "secretAccessKey"
+
     const val DEFAULT_DATA_CHUNK_SIZE = 20_000
+
+    const val CREDENTIALS_FILTER = "credentialsFilter"
 
     @JvmField
     val DEFAULT_WRITE_MODE = SaveMode.Overwrite

@@ -17,7 +17,7 @@ class IntegrationConfigurationSerializationTest : AbstractJacksonSerializationTe
         } catch (e: IOException) {
             e.printStackTrace()
             Assert.fail("IOException getting sample data ")
-            return IntegrationConfiguration( "", "", Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), mapOf())
+            return IntegrationConfiguration( "", "", Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), mapOf())
         }
     }
 
@@ -35,7 +35,7 @@ class IntegrationSerializationTest : AbstractJacksonSerializationTest<Integratio
         } catch (e: IOException) {
             e.printStackTrace()
             Assert.fail("IOException getting sample data ")
-            return Integration( "", "", "", false)
+            return Integration( "", "", "", gluttony = false)
         }
     }
 
