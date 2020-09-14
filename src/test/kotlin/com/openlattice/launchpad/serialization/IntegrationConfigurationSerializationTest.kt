@@ -2,7 +2,12 @@ package com.openlattice.launchpad.serialization
 
 import com.openlattice.launchpad.AbstractJacksonSerializationTest
 import com.openlattice.launchpad.IntegrationConfigLoader
-import com.openlattice.launchpad.configuration.*
+import com.openlattice.launchpad.configuration.AwsS3ClientConfiguration
+import com.openlattice.launchpad.configuration.DataLake
+import com.openlattice.launchpad.configuration.Integration
+import com.openlattice.launchpad.configuration.IntegrationConfiguration
+import com.openlattice.launchpad.configuration.LaunchpadDatasource
+import com.openlattice.launchpad.configuration.LaunchpadDestination
 import org.junit.Assert
 import java.io.IOException
 import java.util.*
@@ -12,12 +17,19 @@ import java.util.*
  */
 class IntegrationConfigurationSerializationTest : AbstractJacksonSerializationTest<IntegrationConfiguration>() {
     override fun getSampleData(): IntegrationConfiguration {
-        try {
-            return IntegrationConfigLoader.asYaml("integrations_serialization_test.yaml")
+        return try {
+            IntegrationConfigLoader.asYaml("integrations_serialization_test.yaml")
         } catch (e: IOException) {
             e.printStackTrace()
             Assert.fail("IOException getting sample data ")
-            return IntegrationConfiguration( "", "", Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), mapOf())
+            IntegrationConfiguration( "", "",
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    mapOf(),
+                    mapOf())
         }
     }
 

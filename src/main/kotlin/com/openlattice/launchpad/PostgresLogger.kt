@@ -14,8 +14,8 @@ import java.util.*
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
 class LaunchpadLogger private constructor(
-        val maybeHds: HikariDataSource?,
-        val hostname: String = getHost()
+        private val maybeHds: HikariDataSource?,
+        private val hostname: String = getHost()
 ) {
 
     private constructor(): this(null)
@@ -30,7 +30,7 @@ class LaunchpadLogger private constructor(
         private val logger = LoggerFactory.getLogger(LaunchpadLogger::class.java)
 
         @JvmStatic
-        private final fun getHost(): String {
+        private fun getHost(): String {
             return try {
                 val localhost = InetAddress.getLocalHost()
                 if (localhost.hostName.isBlank()) {
@@ -46,11 +46,8 @@ class LaunchpadLogger private constructor(
         }
 
         @JvmStatic
-        public final fun createLogger( lakes: Map<String, DataLake>  ): LaunchpadLogger {
-            val maybeLoggerSet = lakes.values.firstOrNull { it.latticeLogger }
-            if ( maybeLoggerSet == null ) {
-                return LaunchpadLogger()
-            }
+        fun createLogger( lakes: Map<String, DataLake>  ): LaunchpadLogger {
+            val maybeLoggerSet = lakes.values.firstOrNull { it.latticeLogger } ?: return LaunchpadLogger()
             return LaunchpadLogger( maybeLoggerSet.getHikariDatasource() )
         }
     }

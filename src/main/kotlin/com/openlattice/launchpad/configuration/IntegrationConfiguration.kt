@@ -21,6 +21,7 @@
 
 package com.openlattice.launchpad.configuration
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.fasterxml.jackson.annotation.JsonFilter
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -54,6 +55,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.apache.commons.lang.StringUtils
 import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -82,11 +84,25 @@ data class IntegrationConfiguration(
         @JsonProperty(DATASOURCES) val datasources: Optional<List<LaunchpadDatasource>>,
         @JsonProperty(DESTINATIONS) val destinations: Optional<List<LaunchpadDestination>>,
         @JsonProperty(DATA_LAKES) val datalakes: Optional<List<DataLake>>,
-        @JsonProperty(INTEGRATIONS) val integrations: Map<String, ListMultimap<String, Integration>>
+        @JsonProperty(INTEGRATIONS) val integrations: Map<String, ListMultimap<String, Integration>>,
+        @JsonProperty(ARCHIVES) val archives: Map<String, Map<String, List<Archive>>> = mapOf()
 ) {
     init {
         Preconditions.checkState( ( datasources.isPresent && destinations.isPresent ) || datalakes.isPresent,
         "Must specify either one or more datasources and destinations or one or more data lakes")
+    }
+
+    fun convertToDataLakesIfPresent(): Map<String, DataLake> {
+        val sourcesConfig = datasources.orElse(listOf())
+        val destsConfig = destinations.orElse(listOf())
+
+        // map to lakes if needed. This will be removed once launchpads are upgraded
+        return datalakes.orElseGet {
+            val newLakes = ArrayList<DataLake>(destsConfig.size + sourcesConfig.size)
+            destsConfig.forEach { newLakes.add(it.asDataLake()) }
+            sourcesConfig.forEach { newLakes.add(it.asDataLake()) }
+            newLakes
+        }.associateBy { it.name }
     }
 }
 
@@ -110,7 +126,68 @@ data class Integration(
         @JsonProperty(MERGE_SQL) val mergeSql: String = "",
         @JsonProperty(MASTER_TABLE_SQL) val masterTableSql : String = "",
         @JsonProperty(GLUTTONY) val gluttony : Boolean = false
-)
+): Transferable {
+    override fun getLandingPad(): String {
+        return destination
+    }
+
+    override fun getLaunchPad(): String {
+        return source
+    }
+}
+
+interface Transferable {
+    fun getLandingPad(): String
+
+    fun getLaunchPad(): String
+}
+
+const val ARCHIVES = "archives"
+const val STRATEGY = "strategy"
+const val CONSTRAINTS = "constraints"
+const val BUCKET_COLUMN = "column"
+const val INTERVAL_COUNT = "intervalCount"
+const val INTERVAL_UNIT = "intervalUnit"
+
+data class Archive(
+        @JsonProperty(SOURCE) val source: String,
+        @JsonProperty(STRATEGY) val strategy: BucketingArchiveStrategy,
+        @JsonProperty(DESCRIPTION) val description : String = "",
+        @JsonProperty(DESTINATION) val destination: String
+): Transferable {
+    override fun getLaunchPad(): String {
+        return source
+    }
+
+    override fun getLandingPad(): String {
+        return destination
+    }
+
+    fun getArchiveSql(): String {
+        return """
+            SELECT * FROM $source WHERE ${strategy.getArchiveSql()}
+        """.trimIndent()
+    }
+}
+
+data class BucketingArchiveStrategy(
+        @JsonProperty(BUCKET_COLUMN) var column: String,
+        @JsonProperty(INTERVAL_COUNT) var interval: Int,
+        @JsonProperty(INTERVAL_UNIT) var intervalUnit: BucketingUnit,
+        @JsonProperty(CONSTRAINTS) var constraints: List<String>
+) {
+    fun getArchiveSql(): String {
+        return """
+            ${constraints.joinToString(" AND ")} 
+        """.trimIndent()
+
+    }
+}
+
+enum class BucketingUnit {
+    DAY,
+    YEAR
+}
 
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
@@ -121,6 +198,13 @@ data class AwsS3ClientConfiguration(
         @JsonProperty(ACCESS_KEY_ID) val accessKeyId: String,
         @JsonProperty(SECRET_ACCESS_KEY) val secretAccessKey: String
 )
+
+enum class DataFormat( val extension: String ) {
+    CSV_FORMAT(".csv"),
+    ORC_FORMAT(".orc"),
+    LEGACY_CSV_FORMAT(".csv")
+}
+
 
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
@@ -176,4 +260,28 @@ data class DataLake(
         logger.info("JDBC URL = {}", hc.jdbcUrl)
         return HikariDataSource(hc)
     }
+}
+
+fun configureOrGetSparkSession( integrationConfiguration: IntegrationConfiguration ): SparkSession {
+    val session = SparkSession.builder()
+            .master("local[${Runtime.getRuntime().availableProcessors()}]")
+            .appName("integration")
+    if ( integrationConfiguration.extraSparkParameters.isPresent ) {
+        integrationConfiguration.extraSparkParameters.get().forEach { (k, v) ->
+            session.config(k, v )
+        }
+    }
+    if ( integrationConfiguration.awsConfig.isPresent ) {
+        val config = DefaultAWSCredentialsProviderChain().credentials
+        val manualConfig = integrationConfiguration.awsConfig.get()
+        session
+                .config("fs.s3a.access.key", config.awsAccessKeyId)
+                .config("fs.s3a.secret.key", config.awsSecretKey)
+                .config("fs.s3a.endpoint", "s3.${manualConfig.regionName}.amazonaws.com")
+                .config("spark.hadoop.fs.s3a.multiobjectdelete.enable", "false")
+                .config("spark.hadoop.fs.s3a.fast.upload", "true")
+                .config("spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version", "2")
+                .config("spark.speculation", "false")
+    }
+    return session.orCreate
 }
