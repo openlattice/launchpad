@@ -17,8 +17,8 @@ datalakes:
 archives:
   remotedb:
     orcFile:
-      - source: "ids"
+      - source: "demo_justice"
         destination: orcFile
         description: "archive into buckets by day"
         strategy:
-          column: "last_write"
+          column: "\"IncidentDate\""

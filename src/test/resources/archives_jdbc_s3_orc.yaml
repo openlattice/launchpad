@@ -11,14 +11,14 @@ datalakes:
     password: "examplepassword"
     driver: org.postgresql.Driver
   - name: s3OrcFile
-    url: "s3a://launchpad-test-bucket/orgUUID/1day/"
+    url: "s3a://launchpad-test-bucket/example_org/"
     driver: "s3"
     dataFormat: "orc"
 archives:
   remotedb:
     s3OrcFile:
-      - source: "ids"
+      - source: "demo_justice"
         destination: s3OrcFile
         description: "archive into buckets by day"
         strategy:
-          column: "last_write"
+          column: "\"IncidentDate\""

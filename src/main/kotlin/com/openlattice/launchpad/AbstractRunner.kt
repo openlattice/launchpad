@@ -69,15 +69,22 @@ class AbstractRunner {
 
                 val sparkWriter = when (destination.dataFormat) {
                     CSV_FORMAT, LEGACY_CSV_FORMAT -> {
-                        ds.write()
+                        val writer = ds.repartition(1)
+                                .write()
                                 .option("header", true)
                                 .format(CSV_FORMAT)
+                        if ( transferable.getBucketColumn() != null ){
+                            writer.partitionBy("bucket_val")
+                        } else {
+                            writer
+                        }
                     }
                     ORC_FORMAT -> {
-                        val writer = ds.write().format(ORC_FORMAT)
+                        val writer = ds.repartition(1)
+                                .write()
+                                .format(ORC_FORMAT)
                         if ( transferable.getBucketColumn() != null ){
-                            writer.bucketBy(365, "bucket_val")
-                                    .sortBy("bucket_val")
+                            writer.partitionBy("bucket_val")
                         } else {
                             writer
                         }
@@ -95,8 +102,7 @@ class AbstractRunner {
                 val destinationPath = when (destination.driver) {
                     FILESYSTEM_DRIVER, S3_DRIVER -> {
                         val fileName = "$landingPadQuery-${OffsetDateTime.now(Clock.systemUTC())}"
-                        sparkWriter.option("path", Paths.get(destination.url, fileName).toString())
-                            .saveAsTable("who_what")
+                        sparkWriter.save( Paths.get( destination.url, fileName ).toString())
                         fileName
                     }
                     else -> {
