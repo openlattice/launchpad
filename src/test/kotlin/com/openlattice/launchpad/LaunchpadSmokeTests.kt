@@ -131,12 +131,12 @@ class LaunchpadSmokeTests {
         runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
-    @Test
-    @Throws(IOException::class)
-    fun runJdbcS3OrcArchive() {
-        val config = IntegrationConfigLoader.fromJdbc.toS3.archiveOrcFormat()
-        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
-    }
+//    @Test
+//    @Throws(IOException::class)
+//    fun runJdbcS3OrcArchive() {
+//        val config = IntegrationConfigLoader.fromJdbc.toS3.archiveOrcFormat()
+//        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+//    }
 
     @Ignore
     @Throws(IOException::class)
