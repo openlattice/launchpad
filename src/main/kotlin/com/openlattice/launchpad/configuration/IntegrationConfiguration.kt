@@ -84,7 +84,7 @@ data class IntegrationConfiguration(
         @JsonProperty(DATASOURCES) val datasources: Optional<List<LaunchpadDatasource>>,
         @JsonProperty(DESTINATIONS) val destinations: Optional<List<LaunchpadDestination>>,
         @JsonProperty(DATA_LAKES) val datalakes: Optional<List<DataLake>>,
-        @JsonProperty(INTEGRATIONS) val integrations: Map<String, ListMultimap<String, Integration>>,
+        @JsonProperty(INTEGRATIONS) val integrations: Map<String, ListMultimap<String, Integration>> = mapOf(),
         @JsonProperty(ARCHIVES) val archives: Map<String, Map<String, List<Archive>>> = mapOf()
 ) {
     init {
@@ -127,19 +127,39 @@ data class Integration(
         @JsonProperty(MASTER_TABLE_SQL) val masterTableSql : String = "",
         @JsonProperty(GLUTTONY) val gluttony : Boolean = false
 ): Transferable {
+    @JsonIgnore
+    override fun getLaunchPad(): String {
+        return source
+    }
+
+    @JsonIgnore
     override fun getLandingPad(): String {
         return destination
     }
 
-    override fun getLaunchPad(): String {
+    @JsonIgnore
+    override fun getSourceName(): String {
         return source
+    }
+
+    @JsonIgnore
+    override fun getBucketColumn(): String? {
+        return null
     }
 }
 
 interface Transferable {
+    @JsonIgnore
+    fun getSourceName(): String
+
+    @JsonIgnore
     fun getLandingPad(): String
 
+    @JsonIgnore
     fun getLaunchPad(): String
+
+    @JsonIgnore
+    fun getBucketColumn(): String?
 }
 
 const val ARCHIVES = "archives"
@@ -151,42 +171,46 @@ const val INTERVAL_UNIT = "intervalUnit"
 
 data class Archive(
         @JsonProperty(SOURCE) val source: String,
-        @JsonProperty(STRATEGY) val strategy: BucketingArchiveStrategy,
+        @JsonProperty(STRATEGY) val strategy: DailyBucketingArchiveStrategy,
         @JsonProperty(DESCRIPTION) val description : String = "",
         @JsonProperty(DESTINATION) val destination: String
 ): Transferable {
+    @JsonIgnore
     override fun getLaunchPad(): String {
-        return source
+        return getArchiveSql()
     }
 
+    @JsonIgnore
     override fun getLandingPad(): String {
         return destination
     }
 
+    @JsonIgnore
+    override fun getSourceName(): String {
+        return source
+    }
+
+    @JsonIgnore
+    override fun getBucketColumn(): String? {
+        return strategy.column
+    }
+
     fun getArchiveSql(): String {
-        return """
-            SELECT * FROM $source WHERE ${strategy.getArchiveSql()}
-        """.trimIndent()
+        return strategy.getArchiveSql(source)
     }
 }
 
-data class BucketingArchiveStrategy(
+data class DailyBucketingArchiveStrategy(
         @JsonProperty(BUCKET_COLUMN) var column: String,
-        @JsonProperty(INTERVAL_COUNT) var interval: Int,
-        @JsonProperty(INTERVAL_UNIT) var intervalUnit: BucketingUnit,
-        @JsonProperty(CONSTRAINTS) var constraints: List<String>
+        @JsonProperty(CONSTRAINTS) var constraints: List<String> = listOf()
 ) {
-    fun getArchiveSql(): String {
-        return """
-            ${constraints.joinToString(" AND ")} 
-        """.trimIndent()
+    fun getArchiveSql( table: String ): String {
+        val constraintsClause = if (constraints.isNotEmpty()) {
+            "WHERE ${constraints.joinToString(" AND ")}"
+        } else { "" }
 
+        return "(SELECT *, $column::date as bucket_val FROM $table $constraintsClause) dh"
     }
-}
-
-enum class BucketingUnit {
-    DAY,
-    YEAR
 }
 
 /**
@@ -204,7 +228,6 @@ enum class DataFormat( val extension: String ) {
     ORC_FORMAT(".orc"),
     LEGACY_CSV_FORMAT(".csv")
 }
-
 
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;

@@ -34,6 +34,7 @@ class AbstractRunner {
          * Writes to spark [session] transferring data from [sourceLake] to [destination],
          * logging to a database using [launchLogger].
          * Uses information in [configuration] to launch [transferrables] from LaunchPad to LandingPad
+         * Returns the final destination of the data after landing
          */
         @JvmStatic
         fun writeUsingSpark(
@@ -58,7 +59,7 @@ class AbstractRunner {
                     logger.error(
                             "Integration {} failed going from {} to {}. Exiting.",
                             configuration.name,
-                            launchPadQuery,
+                            transferable.getSourceName(),
                             landingPadQuery,
                             ex
                     )
@@ -73,7 +74,13 @@ class AbstractRunner {
                                 .format(CSV_FORMAT)
                     }
                     ORC_FORMAT -> {
-                        ds.write().format(ORC_FORMAT)
+                        val writer = ds.write().format(ORC_FORMAT)
+                        if ( transferable.getBucketColumn() != null ){
+                            writer.bucketBy(365, "bucket_val")
+                                    .sortBy("bucket_val")
+                        } else {
+                            writer
+                        }
                     }
                     else -> {
                         ds.write()
@@ -88,7 +95,8 @@ class AbstractRunner {
                 val destinationPath = when (destination.driver) {
                     FILESYSTEM_DRIVER, S3_DRIVER -> {
                         val fileName = "$landingPadQuery-${OffsetDateTime.now(Clock.systemUTC())}"
-                        sparkWriter.save("${destination.url}/$fileName")
+                        sparkWriter.option("path", Paths.get(destination.url, fileName).toString())
+                            .saveAsTable("who_what")
                         fileName
                     }
                     else -> {
@@ -99,7 +107,7 @@ class AbstractRunner {
                 val elapsedNs = ctxt.stop()
                 val secs = elapsedNs / 1_000_000_000.0
                 val mins = secs / 60.0
-                logger.info("Finished writing to name: {} in {} seconds ({} minutes)", destination, secs, mins)
+                logger.info("Finished writing to: {} in {} seconds ({} minutes)", destination, secs, mins)
                 destinationPath
             }
         }

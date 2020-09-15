@@ -116,16 +116,13 @@ public class LaunchpadDatasource {
                 break;
             case CSV_FORMAT:
             case ORC_FORMAT:
+            case LEGACY_CSV_FORMAT:
                 lakeDriver = FILESYSTEM_DRIVER;
                 lakeDataFormat = CSV_FORMAT;
                 break;
             case FILESYSTEM_DRIVER:
                 lakeDriver = FILESYSTEM_DRIVER;
                 lakeDataFormat = UNKNOWN;
-                break;
-            case LEGACY_CSV_FORMAT:
-                lakeDriver = FILESYSTEM_DRIVER;
-                lakeDataFormat = CSV_FORMAT;
                 break;
             default: // JDBC
                 lakeDriver = driver;

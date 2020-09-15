@@ -2,12 +2,8 @@ package com.openlattice.launchpad
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.collect.Multimaps
-import com.openlattice.launchpad.configuration.Integration
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
-import com.openlattice.launchpad.configuration.IntegrationRunner
 import com.openlattice.launchpad.configuration.configureOrGetSparkSession
-import com.openlattice.launchpad.postgres.BasePostgresIterable
-import com.openlattice.launchpad.postgres.StatementHolderSupplier
 import org.junit.Assert
 import org.slf4j.LoggerFactory
 import java.time.OffsetDateTime
@@ -40,22 +36,11 @@ class IntegrationValidator {
             integrationsMap.forEach { (sourceLakeName, destToIntegration) ->
                 val sourceLake = lakes.getValue( sourceLakeName )
                 Multimaps.asMap(destToIntegration).forEach { (destinationLakeName, integrations) ->
-                    val destLake = lakes.getValue(destinationLakeName)
-                    val extIntegrations = integrations.filter { !it.gluttony } + integrations.filter { it.gluttony }
-                            .flatMap { integration ->
-                                BasePostgresIterable(
-                                        StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
-                                ) { rs ->
-                                    Integration(
-                                            rs.getString("description"),
-                                            rs.getString("query"),
-                                            rs.getString("destination")
-                                    )
-                                }
-                            }
 
                     val paths = integrationPaths.get(sourceLakeName)!!.get(destinationLakeName)!!.iterator()
-                    extIntegrations.forEach { integration ->
+                    integrations.filter {
+                        !it.gluttony
+                    }.forEach { integration ->
                         val destination = lakes.getValue(destinationLakeName)
 
                         logger.info("Validating integration: {}", integration)

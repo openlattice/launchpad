@@ -1,30 +1,9 @@
-/*
- * Copyright (C) 2018. OpenLattice, Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * You can contact the owner of the copyright at support@openlattice.com
- *
- *
- */
-
-package com.openlattice.launchpad.configuration
+package com.openlattice.launchpad
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Multimaps
-import com.openlattice.launchpad.AbstractRunner
-import com.openlattice.launchpad.LaunchpadLogger
+import com.openlattice.launchpad.configuration.Integration
+import com.openlattice.launchpad.configuration.IntegrationConfiguration
 import com.openlattice.launchpad.postgres.BasePostgresIterable
 import com.openlattice.launchpad.postgres.StatementHolderSupplier
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
@@ -55,7 +34,7 @@ class IntegrationRunner {
             val lakes = integrationConfiguration.convertToDataLakesIfPresent()
 
             try {
-                launchLogger = LaunchpadLogger.createLogger( lakes )
+                launchLogger = LaunchpadLogger.createLogger(lakes)
             } catch ( ex: Exception ) {
                 logger.error("Unable to create launchpad logger. " +
                         "The likeliest possibilities are the connection timed out due to a firewall rule " +
@@ -66,7 +45,10 @@ class IntegrationRunner {
                 val value = Multimaps.asMap(destToIntegration).map { ( destinationLakeName, integrations ) ->
                     val destination = lakes.getValue(destinationLakeName)
                     val extIntegrations = integrations.filter { !it.gluttony } +
-                            integrations.filter { it.gluttony }.flatMap { integration ->
+                            integrations.filter {
+                                it.gluttony
+                            }.flatMap { integration ->
+                                // Gluttony query generation
                                 BasePostgresIterable(
                                         StatementHolderSupplier(destination.getHikariDatasource(), integration.source)
                                 ) { rs ->

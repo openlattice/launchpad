@@ -29,19 +29,17 @@ class ArchiveRunner {
             }
 
             integrationConfiguration.archives.map { (source, destinationToArchive) ->
-                val sourceLake = dataLakesByName[source]
                 destinationToArchive.map { ( destinationLake, archives ) ->
-                    val destLake = dataLakesByName[destinationLake]
-                    archives.forEach {
-                        val query = it.getArchiveSql()
-                    }
+                    AbstractRunner.writeUsingSpark(
+                            integrationConfiguration,
+                            dataLakesByName.getValue(source),
+                            dataLakesByName.getValue(destinationLake),
+                            archives,
+                            session,
+                            launchLogger
+                    )
                 }
             }
         }
     }
-
-    val dateQuery = """
-            Select * from <table> where <constraints> AND <dateCol> >= <startDate> AND <dateCol> < <startDate> + <num> <interval>
-        """.trimIndent()
-
 }

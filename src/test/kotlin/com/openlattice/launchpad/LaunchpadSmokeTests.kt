@@ -4,7 +4,6 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.openlattice.launchpad.configuration.Constants
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
-import com.openlattice.launchpad.configuration.IntegrationRunner
 import com.openlattice.launchpad.configuration.configureOrGetSparkSession
 import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration
 import org.junit.Assert
@@ -26,6 +25,15 @@ class LaunchpadSmokeTests {
 
     companion object {
         @JvmStatic
+        fun runArchiveValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
+            configureOrGetSparkSession( config ).use { session ->
+                ArchiveRunner.runArchives( config, session )
+//                IntegrationValidator.validateIntegration( config, integrationPaths, *sortColumn )
+//                cleanupAfterTest(config, integrationPaths)
+            }
+        }
+
+        @JvmStatic
         fun runIntegrationValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
             configureOrGetSparkSession( config ).use { session ->
                 val integrationPaths = IntegrationRunner.runIntegrations(config, session)
@@ -35,10 +43,13 @@ class LaunchpadSmokeTests {
         }
 
         @JvmStatic
-        fun cleanupAfterTest(config: IntegrationConfiguration, integrationPaths: Map<String, Map<String, List<String>>>) {
+        fun cleanupAfterTest(
+                config: IntegrationConfiguration,
+                integrationPaths: Map<String, Map<String, List<String>>>
+        ) {
             val lakes = config.convertToDataLakesIfPresent()
-            integrationPaths.forEach { source, destToPaths ->
-                destToPaths.forEach { dest, paths ->
+            integrationPaths.forEach { (_, destToPaths) ->
+                destToPaths.forEach { (dest, paths) ->
                     paths.forEach { path ->
                         val destination = lakes.getValue( dest )
                         when ( destination.driver ){
@@ -68,7 +79,7 @@ class LaunchpadSmokeTests {
                                     rest.append('/')
                                 }
                                 rest.append(path)
-                                println("deleting from bucket: $bucket key: ${rest.toString()}")
+                                println("deleting from bucket: $bucket key: $rest")
                                 try {
                                     s3Client.deleteObject(bucket, rest.toString())
                                 } catch ( ex: Exception ) {
@@ -131,12 +142,19 @@ class LaunchpadSmokeTests {
         runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
-//    @Test
-//    @Throws(IOException::class)
-//    fun runJdbcS3OrcArchive() {
-//        val config = IntegrationConfigLoader.fromJdbc.toS3.archiveOrcFormat()
-//        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
-//    }
+    @Test
+    @Throws(IOException::class)
+    fun runJdbcFsOrcArchive() {
+        val config = IntegrationConfigLoader.fromJdbc.toFs.archiveOrcFormat()
+        runArchiveValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun runJdbcS3OrcArchive() {
+        val config = IntegrationConfigLoader.fromJdbc.toS3.archiveOrcFormat()
+        runArchiveValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+    }
 
     @Ignore
     @Throws(IOException::class)
