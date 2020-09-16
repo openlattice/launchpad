@@ -7,7 +7,6 @@ import com.openlattice.launchpad.configuration.Constants.LEGACY_CSV_FORMAT
 import com.openlattice.launchpad.configuration.Constants.ORC_FORMAT
 import com.openlattice.launchpad.configuration.Constants.S3_DRIVER
 import com.openlattice.launchpad.configuration.DataLake
-import com.openlattice.launchpad.configuration.Integration
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
 import com.openlattice.launchpad.configuration.Transferable
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
@@ -47,20 +46,20 @@ class AbstractRunner {
         ): List<String> {
             return transferables.map { transferable ->
                 val launchPadQuery = transferable.getLaunchPad()
-                val landingPadQuery = transferable.getLandingPad()
+                val landingPadDestination = transferable.getLandingPad()
 
                 val start = OffsetDateTime.now()
-                launchLogger.logStarted(configuration.name, landingPadQuery, start, configuration)
+                launchLogger.logStarted(configuration.name, landingPadDestination, start, configuration)
                 val ds = try {
                     logger.info("Transferring ${sourceLake.name} with query $launchPadQuery")
                     getSourceDataset(sourceLake, transferable, session)
                 } catch (ex: Exception) {
-                    launchLogger.logFailed(sourceLake.name, landingPadQuery, start, ex)
+                    launchLogger.logFailed(sourceLake.name, landingPadDestination, start, ex)
                     logger.error(
                             "Integration {} failed going from {} to {}. Exiting.",
                             configuration.name,
                             transferable.getSourceName(),
-                            landingPadQuery,
+                            landingPadDestination,
                             ex
                     )
                     kotlin.system.exitProcess(1)
@@ -100,10 +99,14 @@ class AbstractRunner {
                 logger.info("Created spark writer for destination: {}", destination)
                 val ctxt = timer.time()
                 val destinationPath = when (destination.driver) {
-                    FILESYSTEM_DRIVER, S3_DRIVER -> {
-                        val fileName = "$landingPadQuery-${OffsetDateTime.now(Clock.systemUTC())}"
+                    FILESYSTEM_DRIVER -> {
+                        val fileName = "$landingPadDestination-${OffsetDateTime.now(Clock.systemUTC())}"
                         sparkWriter.save( Paths.get( destination.url, fileName ).toString())
                         fileName
+                    }
+                    S3_DRIVER -> {
+                        sparkWriter.save( "${destination.url}/$landingPadDestination" )
+                        landingPadDestination
                     }
                     else -> {
                         toDatabase(configuration.name, sparkWriter, destination, transferable, start, launchLogger)
@@ -121,26 +124,26 @@ class AbstractRunner {
         private fun mergeIntoMaster(
                 destination: DataLake,
                 integrationName: String,
-                integration: Integration,
+                integration: Transferable,
                 start: OffsetDateTime,
                 launchLogger: LaunchpadLogger
         ) {
-            if (integration.masterTableSql.isBlank() || integration.mergeSql.isBlank()) return
+            if (integration.getMasterTableSql().isBlank() || integration.getMergeTableSql().isBlank()) return
             try {
                 destination.getHikariDatasource().connection.use { conn ->
                     conn.createStatement().use { stmt ->
                         //Make sure master table exists and insert.
-                        stmt.execute(integration.masterTableSql)
-                        stmt.execute(integration.mergeSql)
+                        stmt.execute(integration.getMasterTableSql())
+                        stmt.execute(integration.getMergeTableSql())
                     }
                 }
             } catch (ex: Exception) {
-                launchLogger.logFailed(integrationName, integration.destination, start, ex)
+                launchLogger.logFailed(integrationName, integration.getLandingPad(), start, ex)
                 logger.error(
                         "Integration {} failed going from {} to {} while merging to master. Exiting.",
                         integrationName,
-                        integration.source,
-                        integration.destination,
+                        integration.getLaunchPad(),
+                        integration.getLandingPad(),
                         ex
                 )
             }
@@ -166,13 +169,13 @@ class AbstractRunner {
         ) {
             //Try and merge any data from a failed previous run. Merge after success
             try {
-//                mergeIntoMaster(destination, integrationName, transferable, start)
+                mergeIntoMaster(destination, integrationName, transferable, start, launchLogger)
                 ds.jdbc(
                         destination.url,
                         transferable.getLandingPad(),
                         destination.properties
                 )
-//                mergeIntoMaster(destination, integrationName, transferable, start)
+                mergeIntoMaster(destination, integrationName, transferable, start, launchLogger)
                 launchLogger.logSuccessful(integrationName, transferable.getLandingPad(), start)
             } catch (ex: Exception) {
                 launchLogger.logFailed(integrationName, transferable.getLandingPad(), start, ex)

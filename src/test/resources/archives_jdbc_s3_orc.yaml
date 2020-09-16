@@ -18,7 +18,10 @@ archives:
   remotedb:
     s3OrcFile:
       - source: "demo_justice"
-        destination: s3OrcFile
+        destination: demo_justice
         description: "archive into buckets by day"
         strategy:
           column: "\"IncidentDate\""
+          constraints:
+            - "\"IncidentDate\"::date <= '08/01/2009'::date"
+            - "\"IncidentDate\"::date >= '07/01/2009'::date"

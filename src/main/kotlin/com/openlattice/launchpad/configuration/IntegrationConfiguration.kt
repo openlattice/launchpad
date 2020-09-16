@@ -124,7 +124,7 @@ data class Integration(
         @JsonProperty(SOURCE) val source: String,
         @JsonProperty(DESTINATION) val destination: String,
         @JsonProperty(MERGE_SQL) val mergeSql: String = "",
-        @JsonProperty(MASTER_TABLE_SQL) val masterTableSql : String = "",
+        @JsonProperty(MASTER_TABLE_SQL) val masterSql : String = "",
         @JsonProperty(GLUTTONY) val gluttony : Boolean = false
 ): Transferable {
     @JsonIgnore
@@ -135,6 +135,16 @@ data class Integration(
     @JsonIgnore
     override fun getLandingPad(): String {
         return destination
+    }
+
+    @JsonIgnore
+    override fun getMasterTableSql(): String {
+        return masterSql
+    }
+
+    @JsonIgnore
+    override fun getMergeTableSql(): String {
+        return mergeSql
     }
 
     @JsonIgnore
@@ -149,6 +159,12 @@ data class Integration(
 }
 
 interface Transferable {
+    @JsonIgnore
+    fun getMasterTableSql(): String
+
+    @JsonIgnore
+    fun getMergeTableSql(): String
+
     @JsonIgnore
     fun getSourceName(): String
 
@@ -181,6 +197,16 @@ data class Archive(
     }
 
     @JsonIgnore
+    override fun getMasterTableSql(): String {
+        return ""
+    }
+
+    @JsonIgnore
+    override fun getMergeTableSql(): String {
+        return ""
+    }
+
+    @JsonIgnore
     override fun getLandingPad(): String {
         return destination
     }
@@ -201,8 +227,8 @@ data class Archive(
 }
 
 data class DailyBucketingArchiveStrategy(
-        @JsonProperty(BUCKET_COLUMN) var column: String,
-        @JsonProperty(CONSTRAINTS) var constraints: List<String> = listOf()
+        @JsonProperty(BUCKET_COLUMN) val column: String,
+        @JsonProperty(CONSTRAINTS) val constraints: List<String> = listOf()
 ) {
     fun getArchiveSql( table: String ): String {
         val constraintsClause = if (constraints.isNotEmpty()) {
