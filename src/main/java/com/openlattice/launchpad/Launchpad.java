@@ -2,16 +2,12 @@ package com.openlattice.launchpad;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
-import com.openlattice.launchpad.configuration.DataLake;
-import com.openlattice.launchpad.configuration.IntegrationConfiguration;
-import com.openlattice.launchpad.configuration.IntegrationRunner;
-import com.openlattice.launchpad.configuration.LaunchpadDatasource;
-import com.openlattice.launchpad.configuration.LaunchpadDestination;
+import com.openlattice.launchpad.configuration.*;
 import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.sql.SparkSession;
 import org.slf4j.Logger;
@@ -19,8 +15,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import static com.openlattice.launchpad.configuration.IntegrationConfigurationKt.configureOrGetSparkSession;
 
 /**
  * Main class for running launchpad.
@@ -31,7 +31,7 @@ public class Launchpad {
 
     private static final Logger logger = LoggerFactory.getLogger( Launchpad.class );
 
-    public static void main( String[] args ) throws ParseException, IOException {
+    public static void main( String[] args ) throws IOException {
         CommandLine cl = LaunchpadCli.parseCommandLine( args );
 
         if ( cl.hasOption( LaunchpadCli.HELP )){
@@ -45,9 +45,16 @@ public class Launchpad {
         Preconditions.checkState( StringUtils.isNotBlank( integrationFilePath ) );
         File integrationFile = new File( integrationFilePath );
 
-        IntegrationConfiguration config = mapper.readValue(
-                integrationFile,
-                IntegrationConfiguration.class );
+        IntegrationConfiguration config = null;
+        try {
+             config = mapper.readValue(
+                    integrationFile,
+                    IntegrationConfiguration.class );
+        } catch ( Exception ex ) {
+            System.out.println("There was an error parsing your integration configuration file. Please check your file and run launchpad again");
+            ex.printStackTrace();
+            System.exit(-1);
+        }
 
         Optional<List<DataLake>> currentLakes = config.getDatalakes();
         if ( !currentLakes.isPresent() || currentLakes.get().isEmpty() ) {
@@ -59,8 +66,33 @@ public class Launchpad {
             System.exit( -1 );
         }
 
-        try ( SparkSession session = IntegrationRunner.Companion.configureOrGetSparkSession( config )) {
-            IntegrationRunner.runIntegrations( config, session );
+        Map<String, ListMultimap<String, Integration>> integrations = config.getIntegrations();
+        Map<String, Map<String, List<Archive>>> archives = config.getArchives();
+
+        boolean runIntegrations;
+
+        if ( integrations.isEmpty() ) {
+            if ( archives.isEmpty() ) {
+                System.out.println("Either integrations or archives must be specified to run launchpad");
+                System.exit( -1 );
+            }
+            System.out.println("Setting up archive run with launchpad");
+            runIntegrations = false;
+        } else {
+            if ( !archives.isEmpty() ) {
+                System.out.println("Only one of [ integrations, archives ] can be specified to run launchpad");
+                System.exit( -1 );
+            }
+            System.out.println("Setting up integration run with launchpad");
+            runIntegrations = true;
+        }
+
+        try ( SparkSession session = configureOrGetSparkSession( config )) {
+            if ( runIntegrations ) {
+                IntegrationRunner.runIntegrations( config, session );
+            } else {
+                ArchiveRunner.runArchives( config, session );
+            }
         } catch ( Exception ex ) {
             logger.error( "Exception running launchpad integration", ex);
         }
@@ -76,7 +108,7 @@ public class Launchpad {
             for ( LaunchpadDestination dest : config.getDestinations().get()){
                 lakes.add(dest.asDataLake());
             }
-            IntegrationConfiguration newConfig = new IntegrationConfiguration(
+            return new IntegrationConfiguration(
                     config.getName(),
                     config.getDescription(),
                     config.getAwsConfig(),
@@ -84,9 +116,9 @@ public class Launchpad {
                     Optional.empty(),
                     Optional.empty(),
                     Optional.of(lakes),
-                    config.getIntegrations()
+                    config.getIntegrations(),
+                    new HashMap<>()
             );
-            return newConfig;
         }
         return config;
     }

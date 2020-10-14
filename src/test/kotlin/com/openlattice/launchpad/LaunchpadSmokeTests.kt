@@ -4,13 +4,12 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.openlattice.launchpad.configuration.Constants
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
-import com.openlattice.launchpad.configuration.IntegrationRunner
+import com.openlattice.launchpad.configuration.configureOrGetSparkSession
 import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Paths
@@ -25,10 +24,18 @@ class LaunchpadSmokeTests {
     }
 
     companion object {
-        val logger = LoggerFactory.getLogger(LaunchpadSmokeTests::class.java)
         @JvmStatic
-        fun runTestValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
-            IntegrationRunner.configureOrGetSparkSession( config ).use { session ->
+        fun runArchiveValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
+            configureOrGetSparkSession( config ).use { session ->
+                ArchiveRunner.runArchives( config, session )
+//                IntegrationValidator.validateIntegration( config, integrationPaths, *sortColumn )
+//                cleanupAfterTest(config, integrationPaths)
+            }
+        }
+
+        @JvmStatic
+        fun runIntegrationValidateAndCleanup(config: IntegrationConfiguration, vararg sortColumn: String ) {
+            configureOrGetSparkSession( config ).use { session ->
                 val integrationPaths = IntegrationRunner.runIntegrations(config, session)
                 IntegrationValidator.validateIntegration( config, integrationPaths, *sortColumn )
                 cleanupAfterTest(config, integrationPaths)
@@ -36,10 +43,13 @@ class LaunchpadSmokeTests {
         }
 
         @JvmStatic
-        fun cleanupAfterTest(config: IntegrationConfiguration, integrationPaths: Map<String, Map<String, List<String>>>) {
-            val lakes = IntegrationRunner.convertToDataLakesIfPresent(config)
-            integrationPaths.forEach { source, destToPaths ->
-                destToPaths.forEach { dest, paths ->
+        fun cleanupAfterTest(
+                config: IntegrationConfiguration,
+                integrationPaths: Map<String, Map<String, List<String>>>
+        ) {
+            val lakes = config.convertToDataLakesIfPresent()
+            integrationPaths.forEach { (_, destToPaths) ->
+                destToPaths.forEach { (dest, paths) ->
                     paths.forEach { path ->
                         val destination = lakes.getValue( dest )
                         when ( destination.driver ){
@@ -69,7 +79,7 @@ class LaunchpadSmokeTests {
                                     rest.append('/')
                                 }
                                 rest.append(path)
-                                println("deleting from bucket: $bucket key: ${rest.toString()}")
+                                println("deleting from bucket: $bucket key: $rest")
                                 try {
                                     s3Client.deleteObject(bucket, rest.toString())
                                 } catch ( ex: Exception ) {
@@ -115,55 +125,69 @@ class LaunchpadSmokeTests {
     @Throws(IOException::class)
     fun runJdbcJdbcIntegration() {
         val config = IntegrationConfigLoader.fromJdbc.toJdbc.implicitFormat()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
     @Test
     @Throws(IOException::class)
     fun runJdbcFsOrcIntegration() {
         val config = IntegrationConfigLoader.fromJdbc.toFs.orcFormat()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
     @Test
     @Throws(IOException::class)
     fun runJdbcS3OrcIntegration() {
         val config = IntegrationConfigLoader.fromJdbc.toS3.orcFormat()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun runJdbcFsOrcArchive() {
+        val config = IntegrationConfigLoader.fromJdbc.toFs.archiveOrcFormat()
+        runArchiveValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun runJdbcS3OrcArchive() {
+        val config = IntegrationConfigLoader.fromJdbc.toS3.archiveOrcFormat()
+        runArchiveValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
     @Ignore
     @Throws(IOException::class)
     fun runJdbcFsCsvIntegration() {
         val config = IntegrationConfigLoader.fromJdbc.toFs.csvFormat()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
     @Ignore
     @Throws(IOException::class)
     fun runJdbcOracleIntegration(){
         val config = IntegrationConfigLoader.fromJdbc.toOracle.implicitFormat()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
     @Ignore
     @Throws(IOException::class)
     fun runJdbcJdbcAppendOnlyIntegration() {
         val config = IntegrationConfigLoader.fromJdbc.toJdbc.appendOnlyConfiguration()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
     @Ignore
     @Throws(IOException::class)
     fun runJdbcS3CsvIntegration() {
         val config = IntegrationConfigLoader.fromJdbc.toS3.csvFormat()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 
     @Ignore
     @Throws(IOException::class)
     fun runFsCsvJdbcIntegration() {
         val config = IntegrationConfigLoader.fromCsv.toJdbc.implicitFormat()
-        runTestValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
+        runIntegrationValidateAndCleanup( config, "SubjectIdentification", "IncidentID")
     }
 }

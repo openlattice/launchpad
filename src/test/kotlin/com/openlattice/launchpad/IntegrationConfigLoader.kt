@@ -48,6 +48,11 @@ class IntegrationConfigLoader {
 
         object toFs {
             @Throws(IOException::class)
+            fun archiveOrcFormat(): IntegrationConfiguration {
+                return asYaml("archives_jdbc_fs_orc.yaml")
+            }
+
+            @Throws(IOException::class)
             fun orcFormat(): IntegrationConfiguration {
                 return asYaml("integrations_jdbc_fs_orc.yaml")
             }
@@ -64,6 +69,11 @@ class IntegrationConfigLoader {
         }
 
         object toS3 {
+            @Throws(IOException::class)
+            fun archiveOrcFormat(): IntegrationConfiguration {
+                return asYaml("archives_jdbc_s3_orc.yaml")
+            }
+
             @Throws(IOException::class)
             fun orcFormat(): IntegrationConfiguration {
                 return asYaml("integrations_jdbc_s3_orc.yaml")
