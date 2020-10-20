@@ -83,7 +83,7 @@ class LaunchpadLogger private constructor(
             configuration: IntegrationConfiguration
     ) {
         logOrWarn(
-                "Starting integration $integrationName data lake ${destinationTableName}",
+                "Starting integration $integrationName data lake $destinationTableName",
                 "Unable to create activity entry in the database. Continuing data transfer..."
         ) { hds, hostname ->
             val strippedConfigAsJson = JacksonSerializationConfiguration.credentialFilteredJsonMapper.writeValueAsString(configuration)
