@@ -1,0 +1,24 @@
+name: "example_jdbc_to_s3_orc"
+description: "Copying over data from local table into .orc file in s3"
+awsConfig:
+  regionName: "us-gov-west-1"
+  accessKeyId: "testACID"
+  secretAccessKey: "testSecretAC"
+datalakes:
+  - name: remotedb
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+    username: "example_user"
+    password: "examplepassword"
+    driver: org.postgresql.Driver
+  - name: orcFile
+    url: "/tmp/orc-integ-test"
+    driver: "filesystem"
+    dataFormat: "orc"
+archives:
+  remotedb:
+    orcFile:
+      - source: "demo_justice"
+        destination: orcFile
+        description: "archive into buckets by day"
+        strategy:
+          column: "\"IncidentDate\""
