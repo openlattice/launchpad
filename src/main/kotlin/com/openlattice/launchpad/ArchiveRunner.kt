@@ -18,19 +18,19 @@ class ArchiveRunner {
         fun runArchives(
                 integrationConfiguration: IntegrationConfiguration,
                 session: SparkSession
-        ) {
+        ): Map<String, Map<String, List<String>>> {
             val dataLakesByName = integrationConfiguration.datalakes.get().associateBy { it.name }
             try {
-                launchLogger = LaunchpadLogger.createLogger( dataLakesByName )
-            } catch ( ex: Exception ) {
+                launchLogger = LaunchpadLogger.createLogger(dataLakesByName)
+            } catch (ex: Exception) {
                 logger.error("Unable to create launchpad logger. " +
                         "The likeliest possibilities are the connection timed out due to a firewall rule " +
                         "or there is an error in the config file for the datalake with launchpadLogger set to true", ex)
             }
 
-            integrationConfiguration.archives.map { (source, destinationToArchive) ->
-                destinationToArchive.map { ( destinationLake, archives ) ->
-                    AbstractRunner.writeUsingSpark(
+            return integrationConfiguration.archives.map { (source, destinationToArchive) ->
+                val value = destinationToArchive.map { (destinationLake, archives) ->
+                    val paths = AbstractRunner.writeUsingSpark(
                             integrationConfiguration,
                             dataLakesByName.getValue(source),
                             dataLakesByName.getValue(destinationLake),
@@ -38,8 +38,10 @@ class ArchiveRunner {
                             session,
                             launchLogger
                     )
-                }
-            }
+                    destinationLake to paths
+                }.toMap()
+                source to value
+            }.toMap()
         }
     }
 }

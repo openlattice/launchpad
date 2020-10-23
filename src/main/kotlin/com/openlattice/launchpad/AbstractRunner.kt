@@ -64,7 +64,7 @@ class AbstractRunner {
                     )
                     kotlin.system.exitProcess(1)
                 }
-                logger.info("Read from source: {}", sourceLake)
+                logger.info("Read from source: {}", sourceLake.name)
 
                 val sparkWriter = when (destination.dataFormat) {
                     CSV_FORMAT, LEGACY_CSV_FORMAT -> {
@@ -96,7 +96,7 @@ class AbstractRunner {
                                 .format("jdbc")
                     }
                 }
-                logger.info("Created spark writer for destination: {}", destination)
+                logger.info("Created spark writer for destination: {}", destination.name)
                 val ctxt = timer.time()
                 val destinationPath = when (destination.driver) {
                     FILESYSTEM_DRIVER -> {
@@ -116,7 +116,7 @@ class AbstractRunner {
                 val elapsedNs = ctxt.stop()
                 val secs = elapsedNs / 1_000_000_000.0
                 val mins = secs / 60.0
-                logger.info("Finished writing to: {} in {} seconds ({} minutes)", destination, secs, mins)
+                logger.info("Finished writing to: {} in {} seconds ({} minutes)", destination.name, secs, mins)
                 destinationPath
             }
         }
