@@ -6,7 +6,7 @@ import org.apache.spark.sql.SaveMode
 /**
  * @author Drew Bailey &lt;drew@openlattice.com&gt;
  */
-object Constants  {
+object Constants {
     const val URL = "url"
     const val NAME = "name"
     const val USER = "user"
@@ -30,11 +30,12 @@ object Constants  {
     const val LEGACY_CSV_FORMAT = "com.openlattice.launchpad.csv"
     const val CSV_FORMAT = "csv"
     const val ORC_FORMAT = "orc"
+    const val POSTGRES_DRIVER = "org.postgresql.Driver"
     const val FILESYSTEM_DRIVER = "filesystem"
     const val S3_DRIVER = "s3"
     const val UNKNOWN = "unknown"
 
-    const val ACCESS_KEY_ID     = "accessKeyId"
+    const val ACCESS_KEY_ID = "accessKeyId"
     const val SECRET_ACCESS_KEY = "secretAccessKey"
 
     const val DEFAULT_DATA_CHUNK_SIZE = 20_000
@@ -45,5 +46,5 @@ object Constants  {
     val DEFAULT_WRITE_MODE = SaveMode.Overwrite
 
     @JvmField
-    val NON_JDBC_DRIVERS: Set<String>   = Sets.newHashSet(S3_DRIVER, FILESYSTEM_DRIVER)
+    val NON_JDBC_DRIVERS: Set<String> = Sets.newHashSet(S3_DRIVER, FILESYSTEM_DRIVER)
 }

@@ -33,6 +33,8 @@ class LaunchpadCli {
         @JvmStatic
         fun printHelp(): Unit {
             hf.printHelp( "launchpad", options);
+        fun printHelp() {
+            hf.printHelp("launchpad", options);
         }
     }
 }
