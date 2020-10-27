@@ -88,8 +88,8 @@ data class IntegrationConfiguration(
         @JsonProperty(ARCHIVES) val archives: Map<String, Map<String, List<Archive>>> = mapOf()
 ) {
     init {
-        Preconditions.checkState( ( datasources.isPresent && destinations.isPresent ) || datalakes.isPresent,
-        "Must specify either one or more datasources and destinations or one or more data lakes")
+        Preconditions.checkState((datasources.isPresent && destinations.isPresent) || datalakes.isPresent,
+                "Must specify either one or more datasources and destinations or one or more data lakes")
     }
 
     fun convertToDataLakesIfPresent(): Map<String, DataLake> {
@@ -120,13 +120,13 @@ data class IntegrationConfiguration(
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class Integration(
-        @JsonProperty(DESCRIPTION) val description : String = "",
+        @JsonProperty(DESCRIPTION) val description: String = "",
         @JsonProperty(SOURCE) val source: String,
         @JsonProperty(DESTINATION) val destination: String,
         @JsonProperty(MERGE_SQL) val mergeSql: String = "",
-        @JsonProperty(MASTER_TABLE_SQL) val masterSql : String = "",
-        @JsonProperty(GLUTTONY) val gluttony : Boolean = false
-): Transferable {
+        @JsonProperty(MASTER_TABLE_SQL) val masterSql: String = "",
+        @JsonProperty(GLUTTONY) val gluttony: Boolean = false
+) : Transferable {
     @JsonIgnore
     override fun getLaunchPad(): String {
         return source
@@ -188,9 +188,9 @@ const val INTERVAL_UNIT = "intervalUnit"
 data class Archive(
         @JsonProperty(SOURCE) val source: String,
         @JsonProperty(STRATEGY) val strategy: DailyBucketingArchiveStrategy,
-        @JsonProperty(DESCRIPTION) val description : String = "",
+        @JsonProperty(DESCRIPTION) val description: String = "",
         @JsonProperty(DESTINATION) val destination: String
-): Transferable {
+) : Transferable {
     @JsonIgnore
     override fun getLaunchPad(): String {
         return getArchiveSql()
@@ -230,10 +230,12 @@ data class DailyBucketingArchiveStrategy(
         @JsonProperty(BUCKET_COLUMN) val column: String,
         @JsonProperty(CONSTRAINTS) val constraints: List<String> = listOf()
 ) {
-    fun getArchiveSql( table: String ): String {
+    fun getArchiveSql(table: String): String {
         val constraintsClause = if (constraints.isNotEmpty()) {
             "WHERE ${constraints.joinToString(" AND ")}"
-        } else { "" }
+        } else {
+            ""
+        }
 
         return "(SELECT *, $column::date as bucket_val FROM $table $constraintsClause) dh"
     }
