@@ -179,8 +179,8 @@ dependencies {
     /*
      * TESTING
      */
-    testCompile "junit:junit:${junit_version}"
-    testCompile "org.mockito:mockito-all:${mockito_version}"
+    testImplementation "junit:junit:${junit_version}"
+    testImplementation "org.mockito:mockito-all:${mockito_version}"
 }
 
 startScripts {
