@@ -22,49 +22,13 @@ ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.g
 
 apply from: "https://raw.githubusercontent.com/openlattice/openlattice/fix/build/gradles/openlattice.gradle"
 
-def LAUNCHPAD_XMS = "$System.env.LAUNCHPAD_XMS"
-def LAUNCHPAD_XMX = "$System.env.LAUNCHAPD_XMX"
-def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
-def PARALLEL = "$System.env.PARALLELISM"
-def GC = "$System.env.GC"
-
-if (LAUNCHPAD_XMS == 'null' || LAUNCHPAD_XMS == null || LAUNCHPAD_XMS == "") {
-    LAUNCHPAD_XMS = '-Xms1g'
-}
-
-if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
-    LAUNCHPAD_XMX = '-Xmx4g'
-}
-
-if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
-    LP_ARGS = ''
-}
-
-if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
-    PARALLEL = "-Djava.util.concurrent.ForkJoinPool.common.parallelism=" + Runtime.runtime.availableProcessors()
-}
-
-if (GC == 'null' || GC == null || GC == "") {
-    GC = "-XX:+UseG1GC"
-}
-
-
-mainClassName = "com.openlattice.launchpad.Launchpad"
-applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
-println "Using java args for running ${projectName}: " + Arrays.toString(applicationDefaultJvmArgs)
 
-run {
-    if (LP_ARGS != null) {
-        args LP_ARGS.split()
-    } else if (System.getProperty("exec.args") != null) {
-        args System.getProperty("exec.args").split()
-    }
+jacoco {
+    toolVersion = "0.8.2"
 }
-
-println "Enabled profiles: " + Arrays.toString(run.args)
 
 checkstyle {
     toolVersion = '7.4'
@@ -91,10 +55,47 @@ spotbugsMain {
   }
 }
 
-jacoco {
-  toolVersion = "0.8.2"
+mainClassName = "com.openlattice.launchpad.Launchpad"
+
+def LAUNCHPAD_XMS = "$System.env.LAUNCHPAD_XMS"
+def LAUNCHPAD_XMX = "$System.env.LAUNCHAPD_XMX"
+def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
+def PARALLEL = "$System.env.PARALLELISM"
+def GC = "$System.env.GC"
+
+if (LAUNCHPAD_XMS == 'null' || LAUNCHPAD_XMS == null || LAUNCHPAD_XMS == "") {
+    LAUNCHPAD_XMS = '-Xms1g'
 }
 
+if (LAUNCHPAD_XMX == 'null' || LAUNCHPAD_XMX == null || LAUNCHPAD_XMX == "") {
+    LAUNCHPAD_XMX = '-Xmx4g'
+}
+
+if (LP_ARGS == 'null' || LP_ARGS == null || LP_ARGS == "") {
+    LP_ARGS = ''
+}
+
+if (PARALLEL == 'null' || PARALLEL == null || PARALLEL == "") {
+    PARALLEL = "-Djava.util.concurrent.ForkJoinPool.common.parallelism=" + Runtime.runtime.availableProcessors()
+}
+
+if (GC == 'null' || GC == null || GC == "") {
+    GC = "-XX:+UseG1GC"
+}
+
+println "Using java args for running ${projectName}: " + Arrays.toString(applicationDefaultJvmArgs)
+
+applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
+
+run {
+    if (LP_ARGS != null) {
+        args LP_ARGS.split()
+    } else if (System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
+println "Enabled profiles: " + Arrays.toString(run.args)
 configurations {
     provided
 }
@@ -105,7 +106,7 @@ configurations.all {
 }
 
 test {
-    ignoreFailures = true
+  useJUnit()
 }
 
 sourceSets {
