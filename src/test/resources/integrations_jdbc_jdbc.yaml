@@ -4,8 +4,8 @@ datalakes:
   - name: remotedb
     url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
     driver: org.postgresql.Driver
-    username: "oltest"
-    password: "test"
+    username: "exampleuser"
+    password: "examplepassword"
     fetchSize: 20000
   - name: localdb
     url: "jdbc:postgresql://localhost:5432/example_integration?ssl=true&sslmode=require"
