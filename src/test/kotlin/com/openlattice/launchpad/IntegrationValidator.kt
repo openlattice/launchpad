@@ -57,7 +57,7 @@ class IntegrationValidator {
                                     integration.source,
                                     ex
                             )
-                            kotlin.system.exitProcess(1)
+                            throw ex
                         }
                         logger.info("Read from source: {}", sourceLake)
 
@@ -73,7 +73,7 @@ class IntegrationValidator {
                                     ex
                             )
 
-                            kotlin.system.exitProcess(1)
+                            throw ex
                         }
                         logger.info("Read from dest: {}", destination)
 
