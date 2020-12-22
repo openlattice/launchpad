@@ -20,7 +20,7 @@ ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 
-apply from: "https://raw.githubusercontent.com/openlattice/openlattice/fix/build/gradles/openlattice.gradle"
+apply from: "https://raw.githubusercontent.com/openlattice/openlattice/develop/gradles/openlattice.gradle"
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
