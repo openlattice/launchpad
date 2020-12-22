@@ -80,10 +80,14 @@ class LaunchpadSmokeTests {
                                 }
                                 rest.append(path)
                                 println("deleting from bucket: $bucket key: $rest")
-                                try {
-                                    s3Client.deleteObject(bucket, rest.toString())
-                                } catch (ex: Exception) {
-                                    ex.printStackTrace()
+
+                                val listResults = s3Client.listObjectsV2(bucket, rest.toString())
+                                listResults.objectSummaries.forEach { summary ->
+                                    try {
+                                        s3Client.deleteObject(summary.bucketName, summary.key)
+                                    } catch (ex: Exception) {
+                                        ex.printStackTrace()
+                                    }
                                 }
                             }
                             else -> {

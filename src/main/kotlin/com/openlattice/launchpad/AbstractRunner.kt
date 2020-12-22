@@ -15,6 +15,7 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+import java.net.SocketTimeoutException
 import java.nio.file.Paths
 import java.time.Clock
 import java.time.OffsetDateTime
@@ -206,16 +207,23 @@ class AbstractRunner {
                         .read()
                         .option("inferSchema", true)
                         .orc("${lake.url}/$fileOrTableName")
-                else -> return sparkSession
-                        .read()
-                        .format("jdbc")
-                        .option("url", lake.url)
-                        .option("dbtable", fileOrTableName)
-                        .option("user", lake.username)
-                        .option("password", lake.password)
-                        .option("driver", lake.driver)
-                        .option("fetchSize", lake.fetchSize.toLong())
-                        .load()
+                else -> {
+                    val session =  sparkSession
+                            .read()
+                            .format("jdbc")
+                            .option("url", lake.url)
+                            .option("dbtable", fileOrTableName)
+                            .option("user", lake.username)
+                            .option("password", lake.password)
+                            .option("driver", lake.driver)
+                            .option("fetchSize", lake.fetchSize.toLong())
+                    try {
+                        return session.load()
+                    } catch ( ex: Exception ) {
+                        logger.error("Connection to ${lake.url} not available, failing")
+                        throw ex
+                    }
+                }
             }
         }
     }
