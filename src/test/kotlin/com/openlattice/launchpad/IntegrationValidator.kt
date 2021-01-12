@@ -2,11 +2,8 @@ package com.openlattice.launchpad
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.collect.Multimaps
-import com.openlattice.launchpad.configuration.Integration
 import com.openlattice.launchpad.configuration.IntegrationConfiguration
-import com.openlattice.launchpad.configuration.IntegrationRunner
-import com.openlattice.launchpad.postgres.BasePostgresIterable
-import com.openlattice.launchpad.postgres.StatementHolderSupplier
+import com.openlattice.launchpad.configuration.configureOrGetSparkSession
 import org.junit.Assert
 import org.slf4j.LoggerFactory
 import java.time.OffsetDateTime
@@ -30,31 +27,20 @@ class IntegrationValidator {
             val integrationsMap = integrationConfiguration.integrations
 
             // map to lakes if needed. This should be removed once launchpads are upgraded
-            val lakes = IntegrationRunner.convertToDataLakesIfPresent(integrationConfiguration)
+            val lakes = integrationConfiguration.convertToDataLakesIfPresent()
 
             launchLogger = LaunchpadLogger.createLogger( lakes )
 
-            val session = IntegrationRunner.configureOrGetSparkSession(integrationConfiguration)
+            val session = configureOrGetSparkSession(integrationConfiguration)
 
-            integrationsMap.forEach { sourceLakeName, destToIntegration ->
+            integrationsMap.forEach { (sourceLakeName, destToIntegration) ->
                 val sourceLake = lakes.getValue( sourceLakeName )
-                Multimaps.asMap(destToIntegration).forEach { destinationLakeName, integrations ->
-                    val destLake = lakes.getValue(destinationLakeName)
-                    val extIntegrations = integrations.filter { !it.gluttony } + integrations.filter { it.gluttony }
-                            .flatMap { integration ->
-                                BasePostgresIterable(
-                                        StatementHolderSupplier(destLake.getHikariDatasource(), integration.source)
-                                ) { rs ->
-                                    Integration(
-                                            rs.getString("description"),
-                                            rs.getString("query"),
-                                            rs.getString("destination")
-                                    )
-                                }
-                            }
+                Multimaps.asMap(destToIntegration).forEach { (destinationLakeName, integrations) ->
 
                     val paths = integrationPaths.get(sourceLakeName)!!.get(destinationLakeName)!!.iterator()
-                    extIntegrations.forEach { integration ->
+                    integrations.filter {
+                        !it.gluttony
+                    }.forEach { integration ->
                         val destination = lakes.getValue(destinationLakeName)
 
                         logger.info("Validating integration: {}", integration)
@@ -62,7 +48,7 @@ class IntegrationValidator {
                         launchLogger.logStarted(integrationConfiguration.name, integration.destination, start, integrationConfiguration)
                         val sourceData = try {
                             logger.info("Reading ${sourceLake.name} with source query ${integration.source}")
-                            IntegrationRunner.getSourceDataset(sourceLake, integration, session)
+                            AbstractRunner.getSourceDataset(sourceLake, integration, session)
                         } catch (ex: Exception) {
                             launchLogger.logFailed(sourceLakeName, integration.destination, start, ex)
                             logger.error(
@@ -71,13 +57,13 @@ class IntegrationValidator {
                                     integration.source,
                                     ex
                             )
-                            kotlin.system.exitProcess(1)
+                            throw ex
                         }
                         logger.info("Read from source: {}", sourceLake)
 
                         val destinationData = try {
                             logger.info("Reading ${destination.name} with destination query ${integration.destination}")
-                            IntegrationRunner.getDataset(destination, paths.next(), session)
+                            AbstractRunner.getDataset(destination, paths.next(), session)
                         } catch (ex: Exception) {
                             launchLogger.logFailed(sourceLakeName, integration.destination, start, ex)
                             logger.error(
@@ -87,7 +73,7 @@ class IntegrationValidator {
                                     ex
                             )
 
-                            kotlin.system.exitProcess(1)
+                            throw ex
                         }
                         logger.info("Read from dest: {}", destination)
 
