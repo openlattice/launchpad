@@ -302,6 +302,21 @@ data class DataLake(
         }
     }
 
+    fun isValid(): Boolean {
+        val pClone = properties.clone() as Properties
+        pClone.setProperty(USERNAME, pClone.getProperty(USER))
+        pClone.remove(USER)
+        val hc = HikariConfig(pClone)
+        return try {
+            hc.validate()
+            true
+        } catch (ex: Exception) {
+            logger.info("DataLake configuration validation failed", ex)
+            ex.printStackTrace()
+            false
+        }
+    }
+
     @JsonIgnore
     fun getHikariDatasource(): HikariDataSource {
         val pClone = properties.clone() as Properties

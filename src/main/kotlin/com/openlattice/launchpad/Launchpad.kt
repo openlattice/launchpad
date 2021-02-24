@@ -1,15 +1,20 @@
 package com.openlattice.launchpad
 
+import com.amazonaws.services.costandusagereport.model.AWSRegion
 import com.google.common.base.Preconditions
 import com.google.common.collect.ListMultimap
 import com.google.common.collect.Lists
-import com.openlattice.launchpad.configuration.*
+import com.openlattice.launchpad.configuration.Archive
+import com.openlattice.launchpad.configuration.DataLake
+import com.openlattice.launchpad.configuration.Integration
+import com.openlattice.launchpad.configuration.IntegrationConfiguration
+import com.openlattice.launchpad.configuration.configureOrGetSparkSession
 import com.openlattice.launchpad.serialization.JacksonSerializationConfiguration
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
-import java.util.*
+import java.util.Optional
 import kotlin.system.exitProcess
 
 /**
@@ -41,8 +46,8 @@ class Launchpad {
                         integrationFile,
                         IntegrationConfiguration::class.java)
             } catch (ex: Exception) {
-                println(
-                        "There was an error parsing your integration configuration file. Please check your file and run launchpad again")
+                println("There was an error parsing your integration configuration file. " +
+                        "Please check your configuration file formatting and run launchpad again")
                 ex.printStackTrace()
                 exitProcess(-1)
             }
@@ -51,10 +56,15 @@ class Launchpad {
             if (!currentLakes.isPresent || currentLakes.get().isEmpty()) {
                 val newConfig = convertToDataLakes(config)
                 val newJson = JacksonSerializationConfiguration.yamlMapper.writeValueAsString(newConfig)
-                println("Please replace your current yaml configuration file with the below yaml:")
+                println("The configuration format has been updated. " +
+                        "Please replace your integration configuration file with the below contents and run launchpad again")
                 println(newJson)
                 exitProcess(-1)
             }
+
+            validateDataLakes(config)
+
+            validateAwsConfig(config)
 
             val integrations: Map<String, ListMultimap<String, Integration>> = config.integrations
             val archives: Map<String, Map<String, List<Archive>>> = config.archives
@@ -86,6 +96,31 @@ class Launchpad {
             } catch (ex: java.lang.Exception) {
                 logger.error("Exception running launchpad integration", ex)
             }
+        }
+
+        private fun validateAwsConfig(config: IntegrationConfiguration): Boolean {
+            val maybeAws = config.awsConfig
+            if (maybeAws.isEmpty) {
+                return true
+            }
+            val aws = maybeAws.get()
+            val conditions = aws.accessKeyId.isNotEmpty() && aws.secretAccessKey.isNotEmpty() && aws.regionName.isNotEmpty()
+            return conditions && try {
+                AWSRegion.valueOf(aws.regionName)
+                true
+            } catch (ex: Exception) {
+                logger.error("The AWS region specified in the integration config file appears to be invalid", ex)
+                false
+            }
+        }
+
+        private fun validateDataLakes(config: IntegrationConfiguration): Boolean {
+            val maybeLakes = config.datalakes
+            if (maybeLakes.isEmpty) {
+                return true
+            }
+
+            return maybeLakes.get().all { it.isValid() }
         }
 
         private fun convertToDataLakes(config: IntegrationConfiguration): IntegrationConfiguration? {
