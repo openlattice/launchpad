@@ -217,7 +217,7 @@ data class Archive(
     }
 
     @JsonIgnore
-    override fun getBucketColumn(): String? {
+    override fun getBucketColumn(): String {
         return strategy.column
     }
 
@@ -302,28 +302,13 @@ data class DataLake(
         }
     }
 
-    fun isValid(): Boolean {
-        val pClone = properties.clone() as Properties
-        pClone.setProperty(USERNAME, pClone.getProperty(USER))
-        pClone.remove(USER)
-        val hc = HikariConfig(pClone)
-        return try {
-            hc.validate()
-            true
-        } catch (ex: Exception) {
-            logger.info("DataLake configuration validation failed", ex)
-            ex.printStackTrace()
-            false
-        }
-    }
-
     @JsonIgnore
     fun getHikariDatasource(): HikariDataSource {
         val pClone = properties.clone() as Properties
         pClone.setProperty(USERNAME, pClone.getProperty(USER))
         pClone.remove(USER)
         val hc = HikariConfig(pClone)
-        logger.info("JDBC URL = {}", hc.jdbcUrl)
+        logger.debug("JDBC URL = {}", hc.jdbcUrl)
         return HikariDataSource(hc)
     }
 }
