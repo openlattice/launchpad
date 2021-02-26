@@ -74,7 +74,8 @@ class IntegrationValidator private constructor(
                     state = false
                     val match = jdbcRegex.matchEntire(lake.url)
                     if ( match == null ) {
-                        logs.add("Unable to connect to datalake ${lake.name} because the JDBC URL is invalid. Please correct it and try again")
+                        logs.add("Unable to connect to datalake ${lake.name} because the JDBC URL is invalid. " +
+                                "The expeced format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
                         if (!lake.url.startsWith("jdbc:postgresql://")) {
                             logs.add("The supplied JDBC URL for datalake named `${lake.name}` is invalid. JDBC URLs must start with `jdbc:postgresql://`")
                         }
