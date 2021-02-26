@@ -6,6 +6,7 @@ import com.openlattice.launchpad.configuration.Constants.POSTGRES_DRIVER
 import com.openlattice.launchpad.configuration.Constants.S3_DRIVER
 import com.zaxxer.hikari.pool.HikariPool
 import java.sql.SQLException
+import java.util.*
 
 /**
  * @author Drew Bailey (drew@openlattice.com)
@@ -38,14 +39,10 @@ class IntegrationValidator private constructor(
         }
 
         private val PostgresValidator = IntegrationValidator { config ->
+            val jdbcRegex = Regex("""([\w:]+)://([\w_.]*):(\d+)/(\w+)""")
             val pgDlChecks = config.datalakes.get().filter { POSTGRES_DRIVER == it.driver }.map { lake ->
                 var state = true
                 val logs = mutableSetOf<String>()
-                if (!lake.url.startsWith("jdbc:postgresql://")) {
-                    state = false
-                    logs.add("The supplied JDBC URL for datalake `${lake.name}` is invalid. JDBC URLs must start with `jdbc:postgresql://`")
-                }
-
                 // network checks
                 try {
                     lake.getHikariDatasource().connection.use { conn ->
@@ -62,7 +59,9 @@ class IntegrationValidator private constructor(
                                 val maybeDst = dstToConfig[lake.name]
                                 if (maybeDst != null && maybeDst.isNotEmpty()) {
                                     try {
-                                        stmt.execute("CREATE TABLE test")
+                                        val testTable = UUID.randomUUID()
+                                        stmt.execute("CREATE TABLE \"$testTable\"")
+                                        stmt.execute("DROP TABLE \"$testTable\"")
                                     } catch (ex: Exception) {
                                         state = false
                                         logs.add("Unable to create tables in destination datalake ${lake.name}. Check database access rights/user credentials")
@@ -73,7 +72,20 @@ class IntegrationValidator private constructor(
                     }
                 } catch (ex: HikariPool.PoolInitializationException) {
                     state = false
-                    logs.add("Unable to connect to datalake ${lake.name}. Check network connectivity to ${lake.url}")
+                    val match = jdbcRegex.matchEntire(lake.url)
+                    if ( match == null ) {
+                        logs.add("Unable to connect to datalake ${lake.name} because the JDBC URL is invalid. Please correct it and try again")
+                        if (!lake.url.startsWith("jdbc:postgresql://")) {
+                            logs.add("The supplied JDBC URL for datalake `${lake.name}` is invalid. JDBC URLs must start with `jdbc:postgresql://`")
+                        }
+                    } else {
+                        val remotePrefix = match.groupValues[1]
+                        val remoteHostname = match.groupValues[2]
+                        val remotePort = match.groupValues[3].toInt()
+                        val remoteDbname = match.groupValues[4]
+                        logs.add("Unable to connect to datalake ${lake.name}. Check network connectivity to $remoteHostname " +
+                                "on port $remotePort and ensure that database $remoteDbname is configured correctly")
+                    }
                 }
                 state to logs
             }
