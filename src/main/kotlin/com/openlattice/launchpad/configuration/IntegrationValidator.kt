@@ -52,7 +52,7 @@ class IntegrationValidator private constructor(
                                     stmt.executeQuery("SELECT * FROM ${config.source}").use {}
                                 } catch (ex: SQLException) {
                                     state = false
-                                    logs.add("Unable to read from the source table for datalake ${lake.name}. Check database access rights/user credentials")
+                                    logs.add("Unable to read from the source table for datalake named `${lake.name}`. Check database access rights/user credentials")
                                 }
                             }
                             config.integrations.forEach { (_, dstToConfig) ->
@@ -60,11 +60,11 @@ class IntegrationValidator private constructor(
                                 if (maybeDst != null && maybeDst.isNotEmpty()) {
                                     try {
                                         val testTable = UUID.randomUUID()
-                                        stmt.execute("CREATE TABLE \"$testTable\"")
+                                        stmt.execute("CREATE TABLE \"$testTable\"()")
                                         stmt.execute("DROP TABLE \"$testTable\"")
                                     } catch (ex: Exception) {
                                         state = false
-                                        logs.add("Unable to create tables in destination datalake ${lake.name}. Check database access rights/user credentials")
+                                        logs.add("Unable to create tables in destination datalake named `${lake.name}`. Check database access rights/user credentials")
                                     }
                                 }
                             }
@@ -76,14 +76,14 @@ class IntegrationValidator private constructor(
                     if ( match == null ) {
                         logs.add("Unable to connect to datalake ${lake.name} because the JDBC URL is invalid. Please correct it and try again")
                         if (!lake.url.startsWith("jdbc:postgresql://")) {
-                            logs.add("The supplied JDBC URL for datalake `${lake.name}` is invalid. JDBC URLs must start with `jdbc:postgresql://`")
+                            logs.add("The supplied JDBC URL for datalake named `${lake.name}` is invalid. JDBC URLs must start with `jdbc:postgresql://`")
                         }
                     } else {
                         val remotePrefix = match.groupValues[1]
                         val remoteHostname = match.groupValues[2]
                         val remotePort = match.groupValues[3].toInt()
                         val remoteDbname = match.groupValues[4]
-                        logs.add("Unable to connect to datalake ${lake.name}. Check network connectivity to $remoteHostname " +
+                        logs.add("Unable to connect to datalake named `${lake.name}`. Check network connectivity to $remoteHostname " +
                                 "on port $remotePort and ensure that database $remoteDbname is configured correctly")
                     }
                 }

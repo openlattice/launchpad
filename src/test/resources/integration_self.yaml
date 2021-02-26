@@ -1,0 +1,14 @@
+name: "example_filetransfer"
+description: "Copying over data from local table into other local table"
+datalakes:
+  - name: localdb
+    url: "jdbc:postgresql://localhost:5432/example_integration"
+    driver: org.postgresql.Driver
+    username: "drew"
+    password: "test"
+integrations:
+  localdb:
+    localdb:
+      - source: "demo_table_source"
+        destination: demo_table_dest
+        description: "one is one"
