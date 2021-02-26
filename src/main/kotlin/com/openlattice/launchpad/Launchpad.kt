@@ -42,7 +42,7 @@ class Launchpad {
                         IntegrationConfiguration::class.java)
             } catch (ex: Exception) {
                 println("There was an error parsing your integration configuration file. " +
-                        "Please check your configuration file formatting and run launchpad again")
+                        "Please update your configuration file formatting and run launchpad again")
                 ex.printStackTrace()
                 exitProcess(-1)
             }

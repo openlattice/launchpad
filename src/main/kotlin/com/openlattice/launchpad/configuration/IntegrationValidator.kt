@@ -4,6 +4,8 @@ import com.amazonaws.services.s3.model.Region
 import com.openlattice.launchpad.configuration.Constants.FILESYSTEM_DRIVER
 import com.openlattice.launchpad.configuration.Constants.POSTGRES_DRIVER
 import com.openlattice.launchpad.configuration.Constants.S3_DRIVER
+import com.zaxxer.hikari.pool.HikariPool
+import java.sql.SQLException
 
 /**
  * @author Drew Bailey (drew@openlattice.com)
@@ -51,7 +53,7 @@ class IntegrationValidator private constructor(
                             config.integrations[lake.name]?.forEach { _, config ->
                                 try {
                                     stmt.executeQuery("SELECT * FROM ${config.source}").use {}
-                                } catch (ex: Exception) {
+                                } catch (ex: SQLException) {
                                     state = false
                                     logs.add("Unable to read from the source table for datalake ${lake.name}. Check database access rights/user credentials")
                                 }
@@ -69,7 +71,7 @@ class IntegrationValidator private constructor(
                             }
                         }
                     }
-                } catch (ex: Exception) {
+                } catch (ex: HikariPool.PoolInitializationException) {
                     state = false
                     logs.add("Unable to connect to datalake ${lake.name}. Check network connectivity to ${lake.url}")
                 }
