@@ -41,8 +41,8 @@ class Launchpad {
                         integrationFile,
                         IntegrationConfiguration::class.java)
             } catch (ex: Exception) {
-                println(
-                        "There was an error parsing your integration configuration file. Please check your file and run launchpad again")
+                println("There was an error parsing your integration configuration file. " +
+                        "Please update your configuration file formatting and run launchpad again")
                 ex.printStackTrace()
                 exitProcess(-1)
             }
@@ -51,9 +51,23 @@ class Launchpad {
             if (!currentLakes.isPresent || currentLakes.get().isEmpty()) {
                 val newConfig = convertToDataLakes(config)
                 val newJson = JacksonSerializationConfiguration.yamlMapper.writeValueAsString(newConfig)
-                println("Please replace your current yaml configuration file with the below yaml:")
+                println("The configuration format has been updated. " +
+                        "Please replace your integration configuration file with the below contents and run launchpad again")
                 println(newJson)
                 exitProcess(-1)
+            }
+
+            val (state, messages) = IntegrationValidator.RootValidator.validate(config)
+            if ( !state ) {
+                logger.error("Errors encountered during integration validation")
+                messages.forEach {
+                    logger.error(it)
+                }
+                exitProcess(-1)
+            }
+            logger.info("Launchpad validation completed successfully")
+            messages.forEach {
+                logger.warn(it)
             }
 
             val integrations: Map<String, ListMultimap<String, Integration>> = config.integrations
