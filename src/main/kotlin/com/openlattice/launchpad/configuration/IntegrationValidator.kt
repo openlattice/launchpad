@@ -43,6 +43,8 @@ class IntegrationValidator private constructor(
             val pgDlChecks = config.datalakes.get().filter { POSTGRES_DRIVER == it.driver }.map { lake ->
                 var state = true
                 val logs = mutableSetOf<String>()
+
+                val match = jdbcRegex.matchEntire(lake.url)
                 // network checks
                 try {
                     lake.getHikariDatasource().connection.use { conn ->
@@ -70,9 +72,15 @@ class IntegrationValidator private constructor(
                             }
                         }
                     }
+                } catch (ex: RuntimeException) {
+                    state = false
+                    if ( match == null ) {
+                        state = false
+                        logs.add("Datalake ${lake.name} has an invalid JDBC URL. " +
+                                "The expeced format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
+                    }
                 } catch (ex: HikariPool.PoolInitializationException) {
                     state = false
-                    val match = jdbcRegex.matchEntire(lake.url)
                     if ( match == null ) {
                         logs.add("Unable to connect to datalake ${lake.name} because the JDBC URL is invalid. " +
                                 "The expeced format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")

@@ -1,0 +1,19 @@
+name: ""
+description: ""
+datalakes:
+  - name: remotedb
+    url: "jdbc:postgresql://atlas.openlattice.com:30001/example_integration?ssl=true&sslmode=require"
+    driver: org.postgresql.Driver
+    username: "example_user"
+    password: "examplepassword"
+  - name: localdb
+    url: "jdbc:postgresql://localhost:5432/example_integration"
+    driver: org.postgresql.Driver
+    username: "oltest"
+    password: "test"
+integrations:
+  remotedb:
+    localdb:
+      - source: "demo_justice"
+        destination: demo_justice_OLcopy
+        description: "Some other integration"
