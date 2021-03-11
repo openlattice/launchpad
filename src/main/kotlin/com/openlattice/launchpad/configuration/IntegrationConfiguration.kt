@@ -295,7 +295,7 @@ data class DataLake(
                     logger.warn("Connecting to $name with a blank password.")
                 }
                 if ( properties.isEmpty ){
-                    properties.put(JDBC_URL, url)
+                    properties.put(JDBC_URL, url.trim())
                     properties.put(Constants.MAXIMUM_POOL_SIZE, "1")
                     properties.put(Constants.CONNECTION_TIMEOUT, "120000") //2-minute connection timeout
                     properties.put(USER, username)
