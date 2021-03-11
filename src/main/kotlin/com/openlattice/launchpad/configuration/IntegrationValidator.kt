@@ -75,7 +75,6 @@ class IntegrationValidator private constructor(
                 } catch (ex: RuntimeException) {
                     state = false
                     if ( match == null ) {
-                        state = false
                         logs.add("Datalake ${lake.name} has an invalid JDBC URL. " +
                                 "The expeced format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
                     }
