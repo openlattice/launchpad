@@ -155,7 +155,7 @@ dependencies {
      * SQL
      */
     compile "com.zaxxer:HikariCP:${hikariCP_version}"
-    compile "com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8"
+    compile "com.microsoft.sqlserver:mssql-jdbc:9.2.0.jre8"
     compile "org.postgresql:postgresql:${postgresql_version}"
     compile fileTree(dir: 'lib/', include: '*.jar')
 
