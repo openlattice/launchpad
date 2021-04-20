@@ -149,7 +149,7 @@ class IntegrationValidator private constructor(
 
         private val AwsConfigValidator = IntegrationValidator { config ->
             val maybeAws = config.awsConfig
-            if (maybeAws.isEmpty) {
+            if (!maybeAws.isPresent) {
                 return@IntegrationValidator false to setOf("No AWS configuration was specified but one was expected. " +
                         "Please at least specify the `awsConfig: ` block with the `regionName` property " +
                         "and an AWS secretAccessKey and accesKeyId specified as environment variables")
@@ -169,7 +169,7 @@ class IntegrationValidator private constructor(
 
         private val DataLakesValidator = IntegrationValidator {
             val maybeLakes = it.datalakes
-            if (maybeLakes.isEmpty) {
+            if (!maybeLakes.isPresent) {
                 return@IntegrationValidator false to setOf("There are no data lakes specified. " +
                         "Please specify at least two data lakes to transfer data between")
             }
