@@ -16,6 +16,8 @@ class IntegrationValidator private constructor(
 ): Validator<IntegrationConfiguration> {
 
     companion object {
+        private val AlwaysPassValidator = IntegrationValidator { true to setOf() }
+
         val RootValidator = IntegrationValidator { config ->
             val (dlState, dlErrors) = DataLakesValidator.validate(config)
             if (!dlState) {
@@ -23,7 +25,7 @@ class IntegrationValidator private constructor(
             }
 
             val driverResults = config.datalakes.get().map { datalake ->
-                val allDriverValidators = driverValidators.getValue(datalake.driver).map {
+                val allDriverValidators = driverValidators.getOrDefault(datalake.driver, listOf(AlwaysPassValidator)).map {
                     it.validate(config)
                 }
                 val allState = allDriverValidators.all { it.first }
@@ -39,12 +41,21 @@ class IntegrationValidator private constructor(
         }
 
         private val PostgresValidator = IntegrationValidator { config ->
-            val jdbcRegex = Regex("""([\w:]+)://([\w_.]*):(\d+)/(\w+)""")
+            val jdbcRegex = Regex("""([\w:]+)://([\w_.]*):(\d+)/(\w+)(\?\w+=\w+)?(&\w+=\w+)*""")
             val pgDlChecks = config.datalakes.get().filter { POSTGRES_DRIVER == it.driver }.map { lake ->
                 var state = true
                 val logs = mutableSetOf<String>()
 
                 val match = jdbcRegex.matchEntire(lake.url)
+                if (match == null) {
+                    state = false
+                    logs.add("Unable to connect to datalake ${lake.name} because the JDBC URL is invalid. " +
+                            "The expeced format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
+                    if (!lake.url.startsWith("jdbc:postgresql://")) {
+                        logs.add("The supplied JDBC URL for datalake named `${lake.name}` is invalid. JDBC URLs must start with `jdbc:postgresql://`")
+                    }
+                }
+
                 // network checks
                 try {
                     lake.getHikariDatasource().connection.use { conn ->
@@ -55,6 +66,7 @@ class IntegrationValidator private constructor(
                                 } catch (ex: SQLException) {
                                     state = false
                                     logs.add("Unable to read from the source table for datalake named `${lake.name}`. Check database access rights/user credentials")
+                                    ex.printStackTrace()
                                 }
                             }
                             config.integrations.forEach { (_, dstToConfig) ->
@@ -67,33 +79,41 @@ class IntegrationValidator private constructor(
                                     } catch (ex: Exception) {
                                         state = false
                                         logs.add("Unable to create tables in destination datalake named `${lake.name}`. Check database access rights/user credentials")
+                                        ex.printStackTrace()
                                     }
                                 }
                             }
                         }
                     }
-                } catch (ex: RuntimeException) {
-                    state = false
-                    if ( match == null ) {
-                        logs.add("Datalake ${lake.name} has an invalid JDBC URL. " +
-                                "The expeced format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
-                    }
                 } catch (ex: HikariPool.PoolInitializationException) {
                     state = false
                     if ( match == null ) {
                         logs.add("Unable to connect to datalake ${lake.name} because the JDBC URL is invalid. " +
-                                "The expeced format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
+                                "The expected format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
                         if (!lake.url.startsWith("jdbc:postgresql://")) {
                             logs.add("The supplied JDBC URL for datalake named `${lake.name}` is invalid. JDBC URLs must start with `jdbc:postgresql://`")
                         }
                     } else {
-                        val remotePrefix = match.groupValues[1]
+                        val protocol = match.groupValues[1]
                         val remoteHostname = match.groupValues[2]
                         val remotePort = match.groupValues[3].toInt()
                         val remoteDbname = match.groupValues[4]
+                        val properties = match.groupValues[5]
                         logs.add("Unable to connect to datalake named `${lake.name}`. Check network connectivity to $remoteHostname " +
                                 "on port $remotePort and ensure that database $remoteDbname is configured correctly")
                     }
+                    ex.printStackTrace()
+                } catch (ex: RuntimeException) {
+                    state = false
+                    if ( match == null ) {
+                        logs.add("Datalake ${lake.name} has an invalid JDBC URL. " +
+                                "The expected format is as follows: `jdbc:postgresql://host:port/database?properties`. Please correct the url string and try again")
+                    }
+                    ex.printStackTrace()
+                } catch (ex: Exception) {
+                    state = false
+                    logs.add("Something failed while testing the datasource connection to ${lake.name}")
+                    ex.printStackTrace()
                 }
                 state to logs
             }
@@ -149,7 +169,7 @@ class IntegrationValidator private constructor(
 
         private val AwsConfigValidator = IntegrationValidator { config ->
             val maybeAws = config.awsConfig
-            if (maybeAws.isEmpty) {
+            if (!maybeAws.isPresent) {
                 return@IntegrationValidator false to setOf("No AWS configuration was specified but one was expected. " +
                         "Please at least specify the `awsConfig: ` block with the `regionName` property " +
                         "and an AWS secretAccessKey and accesKeyId specified as environment variables")
@@ -169,7 +189,7 @@ class IntegrationValidator private constructor(
 
         private val DataLakesValidator = IntegrationValidator {
             val maybeLakes = it.datalakes
-            if (maybeLakes.isEmpty) {
+            if (!maybeLakes.isPresent) {
                 return@IntegrationValidator false to setOf("There are no data lakes specified. " +
                         "Please specify at least two data lakes to transfer data between")
             }
