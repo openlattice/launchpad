@@ -23,7 +23,7 @@ class IntegrationValidator private constructor(
             }
 
             val driverResults = config.datalakes.get().map { datalake ->
-                val allDriverValidators = driverValidators.getValue(datalake.driver).map {
+                val allDriverValidators = driverValidators.getOrDefault(datalake.driver, listOf()).map {
                     it.validate(config)
                 }
                 val allState = allDriverValidators.all { it.first }
