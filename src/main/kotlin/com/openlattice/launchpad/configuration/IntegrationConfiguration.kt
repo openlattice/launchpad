@@ -217,7 +217,7 @@ data class Archive(
     }
 
     @JsonIgnore
-    override fun getBucketColumn(): String? {
+    override fun getBucketColumn(): String {
         return strategy.column
     }
 
@@ -281,17 +281,21 @@ data class DataLake(
     }
 
     init {
-        Preconditions.checkState(StringUtils.isNotBlank(name), "Name must not be blank.")
+        require(StringUtils.isNotBlank(name)) {
+            logger.error("DataLake name must not be blank.")
+        }
         logger.debug("Created data lake with driver: $driver, using $dataFormat format")
         when( driver ) {
             FILESYSTEM_DRIVER, S3_DRIVER -> {}
             else -> {
-                Preconditions.checkState(StringUtils.isNotBlank(username), "Username cannot be blank for database connections.")
+                require(StringUtils.isNotBlank(username)) {
+                    logger.error("DataLake username cannot be blank for database connections.")
+                }
                 if ( password == "" ){
                     logger.warn("Connecting to $name with a blank password.")
                 }
                 if ( properties.isEmpty ){
-                    properties.put(JDBC_URL, url)
+                    properties.put(JDBC_URL, url.trim())
                     properties.put(Constants.MAXIMUM_POOL_SIZE, "1")
                     properties.put(Constants.CONNECTION_TIMEOUT, "120000") //2-minute connection timeout
                     properties.put(USER, username)
@@ -308,7 +312,7 @@ data class DataLake(
         pClone.setProperty(USERNAME, pClone.getProperty(USER))
         pClone.remove(USER)
         val hc = HikariConfig(pClone)
-        logger.info("JDBC URL = {}", hc.jdbcUrl)
+        logger.debug("JDBC URL = {}", hc.jdbcUrl)
         return HikariDataSource(hc)
     }
 }

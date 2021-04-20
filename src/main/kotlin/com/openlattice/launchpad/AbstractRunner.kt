@@ -102,11 +102,11 @@ class AbstractRunner {
                 val destinationPath = when (destination.driver) {
                     FILESYSTEM_DRIVER -> {
                         val fileName = "$landingPadDestination-${OffsetDateTime.now(Clock.systemUTC())}"
-                        sparkWriter.save( Paths.get( destination.url, fileName ).toString())
+                        sparkWriter.save( Paths.get( destination.url.trim(), fileName ).toString())
                         fileName
                     }
                     S3_DRIVER -> {
-                        sparkWriter.save( "${destination.url}/$landingPadDestination" )
+                        sparkWriter.save( "${destination.url.trim()}/$landingPadDestination" )
                         landingPadDestination
                     }
                     else -> {
@@ -172,7 +172,7 @@ class AbstractRunner {
             try {
                 mergeIntoMaster(destination, integrationName, transferable, start, launchLogger)
                 ds.jdbc(
-                        destination.url,
+                        destination.url.trim(),
                         transferable.getLandingPad(),
                         destination.properties
                 )
@@ -202,16 +202,16 @@ class AbstractRunner {
                         .read()
                         .option("header", lake.header)
                         .option("inferSchema", !lake.header )
-                        .csv(Paths.get(lake.url, fileOrTableName).toString())
+                        .csv(Paths.get(lake.url.trim(), fileOrTableName).toString())
                 ORC_FORMAT -> return sparkSession
                         .read()
                         .option("inferSchema", true)
-                        .orc("${lake.url}/$fileOrTableName")
+                        .orc("${lake.url.trim()}/$fileOrTableName")
                 else -> {
                     val session =  sparkSession
                             .read()
                             .format("jdbc")
-                            .option("url", lake.url)
+                            .option("url", lake.url.trim())
                             .option("dbtable", fileOrTableName)
                             .option("user", lake.username)
                             .option("password", lake.password)
@@ -220,7 +220,7 @@ class AbstractRunner {
                     try {
                         return session.load()
                     } catch ( ex: Exception ) {
-                        logger.error("Connection to ${lake.url} not available, failing")
+                        logger.error("Connection to ${lake.url.trim()} not available, failing")
                         throw ex
                     }
                 }
