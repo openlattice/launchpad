@@ -175,8 +175,8 @@ dependencies {
     /*
      * SPARK
      */
-    implementation "org.apache.spark:spark-core_2.11:${spark_version}"
-    implementation "org.apache.spark:spark-sql_2.11:${spark_version}"
+    api "org.apache.spark:spark-core_2.11:${spark_version}"
+    api "org.apache.spark:spark-sql_2.11:${spark_version}"
 
     implementation "org.apache.hadoop:hadoop-aws:${hadoop_version}"
     implementation "org.apache.hadoop:hadoop-hdfs:${hadoop_version}"
