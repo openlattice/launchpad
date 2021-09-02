@@ -75,6 +75,7 @@ def LAUNCHPAD_XMX = "$System.env.LAUNCHAPD_XMX"
 def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
 def PARALLEL = "$System.env.PARALLELISM"
 def GC = "$System.env.GC"
+def INCLUDE_AUTHDLL = "-Djava.library.path=\"mssql-jdbc_auth-9.2.0.x64.dll\""
 
 if (LAUNCHPAD_XMS == 'null' || LAUNCHPAD_XMS == null || LAUNCHPAD_XMS == "") {
     LAUNCHPAD_XMS = '-Xms1g'
@@ -98,7 +99,7 @@ if (GC == 'null' || GC == null || GC == "") {
 
 println "Using java args for running ${projectName}: " + Arrays.toString(applicationDefaultJvmArgs)
 
-applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
+applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC, INCLUDE_AUTHDLL]
 
 run {
     if (LP_ARGS != null) {
@@ -111,6 +112,39 @@ run {
 println "Enabled profiles: " + Arrays.toString(run.args)
 configurations {
     provided
+}
+
+// throws exception if an incorrect version of mssql-jdbc_auth dll exists in src/dist
+for (configuration in configurations) {
+    configuration.getIncoming().afterResolve {
+
+        String dllNamePrefix = "mssql-jdbc_auth"
+        String dllVersionSuffix = "9.2.0.x64.dll"
+
+        def authDlls = getAuthDllFiles(dllNamePrefix)
+
+        for (authDll in authDlls) {
+           throwErrorOnIncorrectVersion(authDll, dllVersionSuffix)
+        }
+    }
+}
+
+FileCollection getAuthDllFiles(String dllNamePrefix) {
+    return fileTree("src/dist").filter {
+        it.isFile() && it.name.startsWith(dllNamePrefix)
+    }
+}
+
+void throwErrorOnIncorrectVersion(File authDll, String dllVersionSuffix) {
+    if (isIncorrectDllVersion(authDll, dllVersionSuffix)) {
+        throw new GradleException(
+                'Incorrect mssql-jdbc-auth version: Please add correct version to src/dist and remove incorrect version.'
+        )
+    }
+}
+
+boolean isIncorrectDllVersion(File authDll, String dllVersionSuffix) {
+    return (authDll != null && !authDll.name.endsWith(dllVersionSuffix))
 }
 
 configurations.all {
