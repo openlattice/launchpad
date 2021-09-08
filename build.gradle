@@ -137,9 +137,9 @@ FileCollection getAuthDllFiles(String dllNamePrefix) {
 
 void throwErrorOnIncorrectVersion(File authDll, String dllVersionSuffix) {
     if (isIncorrectDllVersion(authDll, dllVersionSuffix)) {
-        throw new GradleException(
-                'Incorrect mssql-jdbc-auth version: Please add correct version to src/dist and remove incorrect version.'
-        )
+        String error_msg = "Unexpected mssql integrated security dll version (${authDll.getName()}). Expected version: ${dllVersionSuffix}" +
+                "\n Please remove unexpected DLL version from src/dist and add expected version if not already present."
+        throw new GradleException(error_msg)
     }
 }
 
