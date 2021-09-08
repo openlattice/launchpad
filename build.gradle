@@ -22,7 +22,7 @@ ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 
-apply from: "https://raw.githubusercontent.com/openlattice/openlattice/main/gradles/openlattice.gradle"
+apply from: "../gradles/openlattice.gradle"
 
 
 java {
@@ -137,7 +137,7 @@ FileCollection getAuthDllFiles(String dllNamePrefix) {
 
 void throwErrorOnIncorrectVersion(File authDll, String dllVersionSuffix) {
     if (isIncorrectDllVersion(authDll, dllVersionSuffix)) {
-        String error_msg = "Unexpected mssql integrated security dll version (" + authDll.getName() + "). Expected version: " + dllVersionSuffix +
+        String error_msg = "Unexpected mssql integrated security dll version (${authDll.getName()}). Expected version: ${dllVersionSuffix}" +
                 "\n Please remove unexpected DLL version from src/dist and add expected version if not already present."
         throw new GradleException(error_msg)
     }
