@@ -22,7 +22,7 @@ ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 
-apply from: "../gradles/openlattice.gradle"
+apply from: "https://raw.githubusercontent.com/openlattice/openlattice/main/gradles/openlattice.gradle"
 
 
 java {
