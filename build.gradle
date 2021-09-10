@@ -8,8 +8,8 @@ plugins {
     id 'maven-publish'
     id 'checkstyle'
     id 'signing'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.31'
-    id 'org.jetbrains.kotlin.plugin.spring' version '1.4.31'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.10'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.5.10'
     id 'org.jetbrains.dokka' version '0.9.18'
     id 'com.github.spotbugs' version '4.6.0'
 }
@@ -22,7 +22,7 @@ ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 
-apply from: "https://raw.githubusercontent.com/openlattice/openlattice/develop/gradles/openlattice.gradle"
+apply from: "https://raw.githubusercontent.com/openlattice/openlattice/main/gradles/openlattice.gradle"
 
 
 java {
@@ -46,7 +46,7 @@ jacoco {
 checkstyle {
     toolVersion = '7.4'
     showViolations = false
-    config project.resources.text.fromUri('https://raw.githubusercontent.com/openlattice/openlattice/develop/gradles/checkstyle.xml')
+    config project.resources.text.fromUri('https://raw.githubusercontent.com/openlattice/openlattice/main/gradles/checkstyle.xml')
 }
 
 tasks.withType(Checkstyle) {
@@ -75,6 +75,7 @@ def LAUNCHPAD_XMX = "$System.env.LAUNCHAPD_XMX"
 def LP_ARGS = "$System.env.LAUNCHPAD_ARGS"
 def PARALLEL = "$System.env.PARALLELISM"
 def GC = "$System.env.GC"
+def INCLUDE_AUTHDLL = "-Djava.library.path=\"mssql-jdbc_auth-9.2.0.x64.dll\""
 
 if (LAUNCHPAD_XMS == 'null' || LAUNCHPAD_XMS == null || LAUNCHPAD_XMS == "") {
     LAUNCHPAD_XMS = '-Xms1g'
@@ -98,7 +99,7 @@ if (GC == 'null' || GC == null || GC == "") {
 
 println "Using java args for running ${projectName}: " + Arrays.toString(applicationDefaultJvmArgs)
 
-applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC]
+applicationDefaultJvmArgs = [LAUNCHPAD_XMS, LAUNCHPAD_XMX, "-server", PARALLEL, GC, INCLUDE_AUTHDLL]
 
 run {
     if (LP_ARGS != null) {
@@ -111,6 +112,39 @@ run {
 println "Enabled profiles: " + Arrays.toString(run.args)
 configurations {
     provided
+}
+
+// throws exception if an incorrect version of mssql-jdbc_auth dll exists in src/dist
+for (configuration in configurations) {
+    configuration.getIncoming().afterResolve {
+
+        String dllNamePrefix = "mssql-jdbc_auth"
+        String dllVersionSuffix = "9.2.0.x64.dll"
+
+        def authDlls = getAuthDllFiles(dllNamePrefix)
+
+        for (authDll in authDlls) {
+           throwErrorOnIncorrectVersion(authDll, dllVersionSuffix)
+        }
+    }
+}
+
+FileCollection getAuthDllFiles(String dllNamePrefix) {
+    return fileTree("src/dist").filter {
+        it.isFile() && it.name.startsWith(dllNamePrefix)
+    }
+}
+
+void throwErrorOnIncorrectVersion(File authDll, String dllVersionSuffix) {
+    if (isIncorrectDllVersion(authDll, dllVersionSuffix)) {
+        String error_msg = "Unexpected mssql integrated security dll version (${authDll.getName()}). Expected version: ${dllVersionSuffix}" +
+                "\n Please remove unexpected DLL version from src/dist and add expected version if not already present."
+        throw new GradleException(error_msg)
+    }
+}
+
+boolean isIncorrectDllVersion(File authDll, String dllVersionSuffix) {
+    return (authDll != null && !authDll.name.endsWith(dllVersionSuffix))
 }
 
 configurations.all {
@@ -133,7 +167,7 @@ jar {
     doFirst {
         manifest {
             attributes (
-                    "Class-Path": configurations.runtime.files.collect { it.getName() }.join(" "),
+                    "Class-Path": configurations.runtimeClasspath.files.collect { it.getName() }.join(" "),
                     "Main-Class": mainClassName
             )
         }
@@ -153,61 +187,61 @@ dependencies {
     /*
      * SL4J + LOG4J2
      */
-    compile group: "org.slf4j", name: "slf4j-api", version: "${slf4j_version}"
+    implementation group: "org.slf4j", name: "slf4j-api", version: "${slf4j_version}"
 
-    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: "${log4j_version}"
-    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: "${log4j_version}"
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: "${log4j_version}"
-    compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: "${log4j_version}"
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: "${log4j_version}"
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: "${log4j_version}"
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: "${log4j_version}"
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-web', version: "${log4j_version}"
 
-    compile "commons-cli:commons-cli:$commons_cli_version"
+    implementation "commons-cli:commons-cli:$commons_cli_version"
 
-    compile "com.google.guava:guava:${guava_version}"
+    implementation "com.google.guava:guava:${guava_version}"
 
     /*
      * SQL
      */
-    compile "com.zaxxer:HikariCP:${hikariCP_version}"
-    compile "com.microsoft.sqlserver:mssql-jdbc:9.2.0.jre8"
-    compile "org.postgresql:postgresql:${postgresql_version}"
-    compile fileTree(dir: 'lib/', include: '*.jar')
+    implementation "com.zaxxer:HikariCP:${hikariCP_version}"
+    implementation "com.microsoft.sqlserver:mssql-jdbc:9.2.0.jre8"
+    implementation "org.postgresql:postgresql:${postgresql_version}"
+    implementation fileTree(dir: 'lib/', include: '*.jar')
 
     /*
      * SPARK
      */
-    compile "org.apache.spark:spark-core_2.11:${spark_version}"
-    compile "org.apache.spark:spark-sql_2.11:${spark_version}"
+    api "org.apache.spark:spark-core_2.11:${spark_version}"
+    api "org.apache.spark:spark-sql_2.11:${spark_version}"
 
-    compile "org.apache.hadoop:hadoop-aws:${hadoop_version}"
-    compile "org.apache.hadoop:hadoop-hdfs:${hadoop_version}"
-    compile "org.apache.hadoop:hadoop-common:${hadoop_version}"
+    implementation "org.apache.hadoop:hadoop-aws:${hadoop_version}"
+    implementation "org.apache.hadoop:hadoop-hdfs:${hadoop_version}"
+    implementation "org.apache.hadoop:hadoop-common:${hadoop_version}"
 
     /*
      * AWS
      */
-    compile "com.amazonaws:aws-java-sdk-s3:${aws_sdk_version}"
+    implementation "com.amazonaws:aws-java-sdk-s3:${aws_sdk_version}"
 
     /*
      * Jackson
      */
-    compile "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
-    compile "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jackson_version}"
-    compile "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${jackson_version}"
-    compile "com.fasterxml.jackson.module:jackson-module-afterburner:${jackson_version}"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${jackson_version}"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson_version}"
-    compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jackson_version}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jackson_version}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson_version}"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}"
-    compile "com.fasterxml.jackson.module:jackson-module-scala_2.11:${jackson_version}"
+    implementation "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jackson_version}"
+    implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${jackson_version}"
+    implementation "com.fasterxml.jackson.module:jackson-module-afterburner:${jackson_version}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${jackson_version}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson_version}"
+    implementation "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jackson_version}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jackson_version}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson_version}"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}"
+    implementation "com.fasterxml.jackson.module:jackson-module-scala_2.11:${jackson_version}"
 
-    compile "org.ow2.asm:asm:${asm_version}"
+    implementation "org.ow2.asm:asm:${asm_version}"
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     /*
      * TESTING
