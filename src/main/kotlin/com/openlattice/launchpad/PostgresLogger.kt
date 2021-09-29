@@ -49,7 +49,7 @@ class LaunchpadLogger private constructor(
         fun createLogger( lakes: Map<String, DataLake>  ): LaunchpadLogger {
             val maybeLoggerSet = lakes.values.firstOrNull { it.latticeLogger } ?: return LaunchpadLogger()
             //We only support postgresql for logging. This will fix db -> db transfers when receiving db is not PG
-            return when(maybeLoggerSet.getHikariDatasource().dataSourceClassName) {
+            return when(maybeLoggerSet.driver) {
                 "org.postgresql.Driver" -> LaunchpadLogger(maybeLoggerSet.getHikariDatasource() )
                 else -> LaunchpadLogger()
             }
