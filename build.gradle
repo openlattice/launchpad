@@ -24,22 +24,16 @@ ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.g
 
 apply from: "https://raw.githubusercontent.com/openlattice/openlattice/main/gradles/openlattice.gradle"
 
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
-
-def compiler = javaToolchains.compilerFor {
-    languageVersion = JavaLanguageVersion.of(8)
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-}
+/**
+ * The reason we use source and target compatability instead of toolchain is that toolchain forces use of the --release
+ * flag. This flag prevents exports of some commonly used internal java apis in order to enforce compliance with public
+ * api surface of that particular release.  The source and target compatibility settings without the --release flag
+ * instruct the compiler to generate compatible byte code with that version at the risk of allowing the use of
+ * potentially unsupported APIs on earlier versions. (i.e compiler 17, target/source 11, will create bytecode that
+ * references an 17 API that isn't available on jdk 11).
+ */
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 jacoco {
     toolVersion = "0.8.2"
