@@ -11,7 +11,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.6.10'
     id 'org.jetbrains.kotlin.plugin.spring' version '1.6.10'
     id 'org.jetbrains.dokka' version '0.9.18'
-    id 'com.github.spotbugs' version '4.6.0'
+    id 'com.github.spotbugs' version '5.0.4'
 }
 
 description = "Launchpad"
@@ -22,7 +22,7 @@ ext.scmUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.connectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 ext.developerConnectionUrl = 'scm:git:https://github.com/openlattice/launchpad.git'
 
-apply from: "https://raw.githubusercontent.com/openlattice/openlattice/main/gradles/openlattice.gradle"
+apply from: "../gradles/openlattice.gradle"
 
 /**
  * The reason we use source and target compatability instead of toolchain is that toolchain forces use of the --release
@@ -42,7 +42,7 @@ jacoco {
 checkstyle {
     toolVersion = '7.4'
     showViolations = false
-    config project.resources.text.fromUri('https://raw.githubusercontent.com/openlattice/openlattice/main/gradles/checkstyle.xml')
+    config project.resources.text.fromUri(rootProject.file('gradles/checkstyle.xml').toURI())
 }
 
 tasks.withType(Checkstyle) {
